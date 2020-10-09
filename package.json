@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "description": "simple bot which checks if user is streaming from twitch API",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "nodemon src/index.js"
@@ -23,6 +24,8 @@
   },
   "homepage": "https://github.com/DavePlayer/miodek_bot#readme",
   "dependencies": {
-    "discord.js": "^12.3.1"
+    "discord.js": "^12.3.1",
+    "dotenv": "^8.2.0",
+    "node-fetch": "^2.6.1"
   }
 }
