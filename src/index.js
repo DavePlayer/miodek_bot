@@ -35,7 +35,7 @@ Client.on('ready', async () => {
             isStreaming = false
             //clearInform()
         }
-    }, 5000)
+    }, 1000 * 60)
 })
 
 console.log('działa')
