@@ -1,0 +1,28 @@
+{
+  "name": "miodek_bot",
+  "version": "0.0.0",
+  "description": "simple bot which checks if user is streaming from twitch API",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon src/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DavePlayer/miodek_bot.git"
+  },
+  "keywords": [
+    "miodek",
+    "discord",
+    "bot"
+  ],
+  "author": "Dave_Player",
+  "license": "GNU General Public License v3.0",
+  "bugs": {
+    "url": "https://github.com/DavePlayer/miodek_bot/issues"
+  },
+  "homepage": "https://github.com/DavePlayer/miodek_bot#readme",
+  "dependencies": {
+    "discord.js": "^12.3.1"
+  }
+}
