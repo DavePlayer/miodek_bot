@@ -8,6 +8,7 @@ const Client = new discord.Client()
 
 Client.on('ready', async () => {
     console.log('bot włączony')
+    Client.channels.cache.get('748643741874782318').send('Dzień dobry. Od dziś będę pomagał w śledz... znaczy się pomaganiu mihalxowi w wypisywaniu kiedy będzie streamować')
     let isStreaming = false
     let didInform = false
     const clearInform = async () => {
@@ -29,7 +30,7 @@ Client.on('ready', async () => {
         if(StreamData.stream && isStreaming == false){
             console.log(StreamData.stream)
             isStreaming = true
-            Client.channels.cache.get('764121237105934366').send(`@everyone ${process.env.TWITCH_USERNAME} teraz streamuje`, embeded)
+            Client.channels.cache.get('748643741874782318').send(`@everyone ${process.env.TWITCH_USERNAME} teraz streamuje`, embeded)
         } else if(!StreamData.stream && isStreaming == true) {
             isStreaming = false
             //clearInform()
