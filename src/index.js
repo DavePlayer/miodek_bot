@@ -8,7 +8,7 @@ const Client = new discord.Client()
 
 Client.on('ready', async () => {
     console.log('bot włączony')
-    Client.channels.cache.get('748643741874782318').send('Dzień dobry. Od dziś będę pomagał w śledz... znaczy się pomaganiu mihalxowi w wypisywaniu kiedy będzie streamować')
+    // Client.channels.cache.get('748643741874782318').send('Dzień dobry. Od dziś będę pomagał w śledz... znaczy się pomaganiu mihalxowi w wypisywaniu kiedy będzie streamować')
     let isStreaming = false
     let didInform = false
     const clearInform = async () => {
