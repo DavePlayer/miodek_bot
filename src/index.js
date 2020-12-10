@@ -3,6 +3,7 @@ import dotenv from 'dotenv'
 import { makeUserList } from './userList.js'
 import { startTwitchCheck } from './startTwitchCheck.js'
 import { welcomeUser } from './welcomeUser.js'
+import { rolePunish } from './rolePunichment.js'
 import fs from 'fs'
 dotenv.config()
 
@@ -14,7 +15,7 @@ const getFileJson = () => {
 }
 
 Client.on('ready', async () => {
-	startTwitchCheck()
+	startTwitchCheck(Client)
     Client.channels.cache.get(process.env.DISCORD_CHANNEL).send('dzialam')
 })
 
@@ -24,9 +25,14 @@ Client.on('message', message => {
         const regex = message.content.match(/BOT (.*)/)
         if(regex != null){
             const command = regex[1]
-            switch(command){
-                case 'save users':
-		    makeUserList(message)
+            switch(true){
+                case command.includes('save users'):
+		            makeUserList(message, Client)
+                    break
+                case command.includes('punish'):
+                    const time = command.split(' ')
+                    rolePunish(Client, message.mentions.users, time[time.length -1])
+                    break
             }
         }
     }

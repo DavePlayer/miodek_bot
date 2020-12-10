@@ -1,7 +1,8 @@
 import node_fetch from 'node-fetch'
+import discord from 'discord.js'
 const fetch = node_fetch
 
-export const startTwitchCheck = async () => {
+export const startTwitchCheck = async (Client) => {
     console.log('checking twitch status')
     // Client.channels.cache.get('748643741874782318').send('Dzień dobry. Od dziś będę pomagał w śledz... znaczy się pomaganiu mihalxowi w wypisywaniu kiedy będzie streamować')
     let isStreaming = false

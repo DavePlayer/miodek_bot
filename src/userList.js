@@ -24,7 +24,8 @@ export const makeUserList = (message, Client) => {
     json = [...json, {roles}]
     const data = JSON.stringify(json)
     fs.writeFile('roles.json', data, err => {
-	if(err)
-	    console.log(err)
+	    if(err)
+	        console.log(err)
+        else console.log(`----------\n users saved properly`)
     })
 }
