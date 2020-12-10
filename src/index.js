@@ -35,7 +35,7 @@ Client.on('message', message => {
 
 Client.on('guildMemberUpdate', member => {
 // niby dziala na kazda zmiane roi, ale tez zmianie pseudonimu jak i usuniecie albo dodanie uzytkownika
-	makeUserList(member)
+	makeUserList(member, Client)
 })
 
 Client.on('guildMemberAdd', member => {

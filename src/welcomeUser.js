@@ -1,4 +1,4 @@
-export const welcomeUser = user => {
+export const welcomeUser = member => {
 
      const welcomeMessages = [
         `Świeże mięso na horyzoncie ${member.user.username}`,

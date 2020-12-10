@@ -1,5 +1,6 @@
+import fs from 'fs'
 
-export const makeUserList = message => {
+export const makeUserList = (message, Client) => {
     let users = []
     let roles = []
     const cache = Client.guilds.cache.get(process.env.DISCORD_SERVER_ID).members.cache.forEach( user => {
