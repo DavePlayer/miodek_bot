@@ -29,7 +29,7 @@ export const rolePunish = (Client, users, time) => {
                     console.log(punishedUsers.filter(o => {
                         if(o != user.user.username) return user
                     }))
-                }, parseInt(time) * 1000 * 60 * 60)
+                }, parseInt(time) * 1000 * 60)
             }
         } else {
             console.log('sth went wrong')

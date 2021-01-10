@@ -16,7 +16,9 @@ const getFileJson = () => {
 
 Client.on('ready', async () => {
 	startTwitchCheck(Client)
+    try {
     Client.channels.cache.get(process.env.DISCORD_CHANNEL).send('dzialam')
+    } catch(err) { throw err }
 })
 
 Client.on('message', message => {
