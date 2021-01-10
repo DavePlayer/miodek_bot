@@ -1,4 +1,5 @@
 import discord from 'discord.js'
+import '@babel/polyfill'
 import dotenv from 'dotenv'
 import { makeUserList } from './userList.js'
 import { startTwitchCheck } from './startTwitchCheck.js'
