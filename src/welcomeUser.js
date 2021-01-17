@@ -1,6 +1,6 @@
 import fs from 'fs'
 
-export const welcomeUser = member => {
+export const welcomeUser = async (member) => {
     const welcomeMessages = [
         `Świeże mięso na horyzoncie ${member.user.username}`,
         `Popełnijmy razem przestępstwo podatkowe ${member.user.username}`,

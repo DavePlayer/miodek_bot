@@ -35,7 +35,58 @@ Client.on("ready", async () => {
     }
 });
 
-app.post("/send", (req, res) => {
+Client.on("message", async (message) => {
+    console.log(message.channel.id);
+    if (
+        message.channel.id == process.env.DISCORD_COMMAND_CHANNEL &&
+        message.content.includes("BOT")
+    ) {
+        const regex = message.content.match(/BOT (.*)/);
+        if (regex != null) {
+            const command = regex[1];
+            switch (true) {
+                case command.includes("save users"):
+                    makeUserList(message, Client);
+                    break;
+                case command.includes("punish"):
+                    const time = command.split(" ");
+                    rolePunish(
+                        Client,
+                        message.mentions.users,
+                        time[time.length - 1]
+                    );
+                    break;
+            }
+        }
+    }
+});
+
+Client.on("guildMemberUpdate", async (member) => {
+    // niby dziala na kazda zmiane roi, ale tez zmianie pseudonimu jak i usuniecie albo dodanie uzytkownika
+    makeUserList(member, Client);
+});
+
+Client.on("guildMemberAdd", async (member) => {
+    console.log("welcoming user");
+    welcomeUser(member);
+    // member.roles.add(member.guild.roles.cache.find(r => r.name == 'debil'))
+
+    // user roles validation and assignment
+    getFileJson().map((o) => {
+        if (typeof o.clientId != "undefined" && o.clientId)
+            if (o.clientId == member.user.id) {
+                o.roles.map((role) =>
+                    member.roles.add(
+                        member.guild.roles.cache.find((r) => r.name == role)
+                    )
+                );
+            }
+    });
+});
+
+console.log("działa");
+
+app.post("/send", async (req, res) => {
     if (req.body.type == `sendMessage` && req.body.message.length > 0) {
         switch (req.body.channel) {
             case "info-social":
@@ -63,57 +114,6 @@ app.post("/send", (req, res) => {
     }
     res.json({ status: "working" });
 });
-
-Client.on("message", (message) => {
-    console.log(message.channel.id);
-    if (
-        message.channel.id == process.env.DISCORD_COMMAND_CHANNEL &&
-        message.content.includes("BOT")
-    ) {
-        const regex = message.content.match(/BOT (.*)/);
-        if (regex != null) {
-            const command = regex[1];
-            switch (true) {
-                case command.includes("save users"):
-                    makeUserList(message, Client);
-                    break;
-                case command.includes("punish"):
-                    const time = command.split(" ");
-                    rolePunish(
-                        Client,
-                        message.mentions.users,
-                        time[time.length - 1]
-                    );
-                    break;
-            }
-        }
-    }
-});
-
-Client.on("guildMemberUpdate", (member) => {
-    // niby dziala na kazda zmiane roi, ale tez zmianie pseudonimu jak i usuniecie albo dodanie uzytkownika
-    makeUserList(member, Client);
-});
-
-Client.on("guildMemberAdd", (member) => {
-    console.log("welcoming user");
-    welcomeUser(member);
-    // member.roles.add(member.guild.roles.cache.find(r => r.name == 'debil'))
-
-    // user roles validation and assignment
-    getFileJson().map((o) => {
-        if (typeof o.clientId != "undefined" && o.clientId)
-            if (o.clientId == member.user.id) {
-                o.roles.map((role) =>
-                    member.roles.add(
-                        member.guild.roles.cache.find((r) => r.name == role)
-                    )
-                );
-            }
-    });
-});
-
-console.log("działa");
 
 Client.login(process.env.TOKEN);
 const port = process.env.PORT || 3000;
