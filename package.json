@@ -30,6 +30,7 @@
     "@babel/preset-env": "^7.12.11",
     "discord.js": "^12.3.1",
     "dotenv": "^8.2.0",
+    "express": "^4.17.1",
     "node-fetch": "^2.6.1",
     "nodemon": "^2.0.7",
     "rimraf": "^3.0.2"

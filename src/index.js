@@ -1,4 +1,5 @@
 import discord from "discord.js";
+import express from "express";
 import "@babel/polyfill";
 import dotenv from "dotenv";
 import { makeUserList } from "./userList.js";
@@ -11,17 +12,59 @@ export let usedMessages = [];
 
 const Client = new discord.Client();
 const Guild = new discord.Guild(Client);
+const app = express();
+app.use(express.json());
 
 const getFileJson = () => {
     return JSON.parse(fs.readFileSync("./roles.json", "utf-8"));
 };
+
+app.post("/send", (req, res) => {
+    console.log(req.body);
+    // http post body structure
+    //{
+    //"type": "sendMessage",
+    //"channel": "bot",
+    //"channelId": 1234567890,
+    //"message": "just message"
+    //}
+    if (
+        req.body.type == "sendMessage" &&
+        req.body.channel.length > 0 &&
+        req.body.channelId
+    ) {
+        switch (req.body.channel) {
+            case "bot":
+                Client.channels.cache
+                    .get(process.env.DISCORD_COMMAND_CHANNEL)
+                    .send(req.body.message);
+                break;
+            case "info-social":
+                Client.channels.cache
+                    .get(process.env.DISCORD_CHANNEL)
+                    .send(req.body.message);
+                break;
+            case "ogolny":
+                Client.channels.cache
+                    .get(process.env.DISCORD_MAIN_CHANNEL)
+                    .send(req.body.message);
+                break;
+            default:
+                Client.channels.cache
+                    .get(req.body.channelId)
+                    .send(req.body.message);
+                break;
+        }
+    }
+    res.send({ stsus: "working" });
+});
 
 Client.on("ready", async () => {
     startTwitchCheck(Client);
     try {
         Client.user.setPresence({
             status: "online", //You can show online, idle....
-            game: {
+            activity: {
                 name: "Wants to commit suicide", //The message shown
                 type: "PLAYING", //PLAYING: WATCHING: LISTENING: STREAMING:
             },
@@ -84,3 +127,5 @@ Client.on("guildMemberAdd", (member) => {
 console.log("działa");
 
 Client.login(process.env.TOKEN);
+const port = process.env.PORT || 3000;
+app.listen(port, () => console.log(`listening on ${port}`));
