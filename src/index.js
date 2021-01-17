@@ -1,4 +1,5 @@
 import discord from "discord.js";
+import express from "express";
 import "@babel/polyfill";
 import dotenv from "dotenv";
 import { makeUserList } from "./userList.js";
@@ -11,6 +12,8 @@ export let usedMessages = [];
 
 const Client = new discord.Client();
 const Guild = new discord.Guild(Client);
+const app = express();
+app.use(express.json());
 
 const getFileJson = () => {
     return JSON.parse(fs.readFileSync("./roles.json", "utf-8"));
@@ -30,6 +33,35 @@ Client.on("ready", async () => {
     } catch (err) {
         throw err;
     }
+});
+
+app.post("/send", (req, res) => {
+    if (req.body.type == `sendMessage` && req.body.message.length > 0) {
+        switch (req.body.channel) {
+            case "info-social":
+                Client.channels.cache
+                    .get(process.env.DISCORD_WELCOME_CHANNEL)
+                    .send(req.body.message);
+                break;
+
+            case "powiadomienia":
+                Client.channels.cache
+                    .get(process.env.DISCORD_CHANNEL)
+                    .send(req.body.message);
+                break;
+            case "ogolny":
+                Client.channels.cache
+                    .get(process.env.DISCORD_MAIN_CHANNEL)
+                    .send(req.body.message);
+                break;
+            case "bot":
+                Client.channels.cache
+                    .get(process.env.DISCORD_COMMAND_CHANNEL)
+                    .send(req.body.message);
+                break;
+        }
+    }
+    res.json({ status: "working" });
 });
 
 Client.on("message", (message) => {
@@ -84,3 +116,5 @@ Client.on("guildMemberAdd", (member) => {
 console.log("działa");
 
 Client.login(process.env.TOKEN);
+const port = process.env.PORT || 3000;
+app.listen(port, () => console.log(`listening on ${port}`));
