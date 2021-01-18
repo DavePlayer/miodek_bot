@@ -51,7 +51,7 @@ app.post("/send", (req, res) => {
                 break;
             default:
                 Client.channels.cache
-                    .get(parseInt(req.body.channelId))
+                    .get(req.body.channelId)
                     .send(req.body.message);
                 break;
         }
