@@ -147,11 +147,11 @@ class ytMeneger {
             this.menagePlaying()
         } else if (message.member.voice.channel.id == this.onChannel) {
             message.channel.send(`adding music to querry`)
+            this.message = message
             this.querry = [
                 ...this.querry,
                 await this.getYtLink(message.content.split(" ").filter((o, i) => (i > 1 ? o : null))),
             ]
-            this.message = message
         } else message.channel.send(`I am playing already music on a diffrent channel Baka`)
     }
 }
