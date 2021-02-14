@@ -42,7 +42,7 @@ class ytMeneger {
 
             message.channel.send(embeded)*/
             this.dispatcher = this.connection
-                .play(ytdl(this.querry[0].url))
+                .play(ytdl(this.querry[0].url, { filter: "audioonly" }))
                 .on("finish", () => {
                     if (this.querry.length <= 1) {
                         this.isPlaying = false
