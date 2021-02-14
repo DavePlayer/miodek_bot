@@ -1,4 +1,6 @@
 import ytdl from "ytdl-core"
+import fetch from "node-fetch"
+import discord from "discord.js"
 
 class ytMeneger {
     constructor() {
@@ -27,25 +29,44 @@ class ytMeneger {
             message.channel.send(`error accoured: ${err}`)
             console.log(err)
         }
-        this.dispatcher = this.connection
-            .play(ytdl(this.querry[0]))
-            .on("finish", () => {
-                if (this.querry.length <= 1) {
+        if (this.querry[0] != "invalid") {
+            console.log(this.querry[0].snippet.thumbnails.medium)
+            /*const embeded = new discord.MessageEmbed()
+                .setColor("#0099ff")
+                .setTitle(this.querry[0].tittle)
+                .setAuthor(this.message.member.user.username, this.message.member.user.avatarURL())
+                .setDescription(this.querry[0].snippet.description)
+                .setThumbnail(this.querry[0].snippet.thumbnails.medium.url)
+                .setTimestamp()
+                .setFooter(`author: ${this.querry[0].snippet.channelTitle}`)
+
+            message.channel.send(embeded)*/
+            this.dispatcher = this.connection
+                .play(ytdl(this.querry[0].url))
+                .on("finish", () => {
+                    if (this.querry.length <= 1) {
+                        this.isPlaying = false
+                        this.querry = []
+                    } else {
+                        this.menagePlaying()
+                    }
                     this.querry = this.querry.filter((o, i) => (i != 0 ? o : null))
-                    this.isPlaying = false
+                })
+                .on("error", (err) => {
+                    message.channel.send(`error accured while playing music`)
+                    console.log(err)
                     this.querry = []
-                } else {
-                    this.querry = this.querry.filter((o, i) => (i != 0 ? o : null))
-                    console.log(this.querry)
-                    this.menagePlaying()
-                }
-            })
-            .on("error", (err) => {
-                message.channel.send(`error accured while playing music`)
-                console.log(err)
-                this.querry = []
+                    this.isPlaying = false
+                })
+        } else {
+            if (this.querry.length <= 1) {
                 this.isPlaying = false
-            })
+                this.querry = []
+            } else {
+                this.menagePlaying()
+            }
+            this.querry = this.querry.filter((o, i) => (i != 0 ? o : null))
+        }
         // this.dispatcher = this.connection.play()
     }
 
@@ -60,19 +81,72 @@ class ytMeneger {
         } else message.channel.send(`you are not on the same channel BAKA!!!`)
     }
 
-    playMusic(message) {
+    displayMusicInfo(o) {
+        const embeded = new discord.MessageEmbed()
+            .setColor("#0099ff")
+            .setTitle(o.items[0].snippet.title)
+            .setAuthor(this.message.member.user.username, this.message.member.user.avatarURL())
+            .setDescription(o.items[0].snippet.description)
+            .setThumbnail(o.items[0].snippet.thumbnails.medium.url)
+            .setTimestamp()
+            .setFooter(`author: ${o.items[0].snippet.channelTitle}`)
+
+        this.message.channel.send(embeded)
+    }
+
+    async getYtLink(args) {
+        const link = args.join("")
+        if (link.includes("youtube.com") && typeof link == "string") {
+            const videoID = link.match(/.*(?:youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=)([^#\&\?]*).*/)
+            return fetch(
+                `https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics&id=${videoID[1]}&key=${process.env.YTAPIKEY}`
+            )
+                .then((o) => o.json())
+                .then((o) => {
+                    if (o.pageInfo.totalResults > 0) {
+                        this.displayMusicInfo(o)
+                        return {
+                            url: link,
+                            tittle: o.items[0].snippet.title,
+                            snippet: o.items[0].snippet,
+                        }
+                    } else this.message.channel.send("invalid link")
+                    return "invalid"
+                })
+        } else {
+            return fetch(
+                `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=20&q=${encodeURIComponent(
+                    args
+                )}&type=video&key=${process.env.YTAPIKEY}`
+            )
+                .then((o) => o.json())
+                .then((o) => {
+                    console.log(o.items[0])
+                    this.displayMusicInfo(o)
+                    return {
+                        url: o.items[0].id.videoId,
+                        tittle: o.items[0].snippet.title,
+                        snippet: o.items[0].snippet,
+                    }
+                })
+        }
+    }
+
+    async playMusic(message) {
         console.log(this.isPlaying)
         if (this.isPlaying == false) {
             if (!message.member.voice.channel) return message.channel.send(`You rane not in any channel BAKA!!!`)
+            this.message = message
             this.onChannel = message.member.voice.channel.id
             this.isPlaying = true
-            this.querry = [...message.content.split(" ").filter((o, i) => (i > 1 ? o : null))]
-            this.message = message
+            this.querry = [await this.getYtLink(message.content.split(" ").filter((o, i) => (i > 1 ? o : null)))]
             this.menagePlaying()
-            message.channel.send(`playing music`)
         } else if (message.member.voice.channel.id == this.onChannel) {
             message.channel.send(`adding music to querry`)
-            this.querry = [...this.querry, ...message.content.split(" ").filter((o, i) => (i > 1 ? o : null))]
+            this.querry = [
+                ...this.querry,
+                await this.getYtLink(message.content.split(" ").filter((o, i) => (i > 1 ? o : null))),
+            ]
             this.message = message
         } else message.channel.send(`I am playing already music on a diffrent channel Baka`)
     }
