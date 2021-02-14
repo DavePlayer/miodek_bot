@@ -86,7 +86,11 @@ class ytMeneger {
             .setColor("#0099ff")
             .setTitle(o.items[0].snippet.title)
             .setAuthor(this.message.member.user.username, this.message.member.user.avatarURL())
-            .setDescription(o.items[0].snippet.description)
+            .setDescription(
+                o.items[0].snippet.description.length > 2040
+                    ? o.items[0].snippet.description.length.slice(0, 2040)
+                    : o.items[0].snippet.description.length
+            )
             .setThumbnail(o.items[0].snippet.thumbnails.medium.url)
             .setTimestamp()
             .setFooter(`author: ${o.items[0].snippet.channelTitle}`)
