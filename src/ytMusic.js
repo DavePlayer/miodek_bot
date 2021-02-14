@@ -88,8 +88,8 @@ class ytMeneger {
             .setAuthor(this.message.member.user.username, this.message.member.user.avatarURL())
             .setDescription(
                 o.items[0].snippet.description.length > 2040
-                    ? o.items[0].snippet.description.length.slice(0, 2040)
-                    : o.items[0].snippet.description.length
+                    ? o.items[0].snippet.description.slice(0, 2040)
+                    : o.items[0].snippet.description
             )
             .setThumbnail(o.items[0].snippet.thumbnails.medium.url)
             .setTimestamp()
