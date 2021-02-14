@@ -43,6 +43,8 @@ class ytMeneger {
             .on("error", (err) => {
                 message.channel.send(`error accured while playing music`)
                 console.log(err)
+                this.querry = []
+                this.isPlaying = false
             })
         // this.dispatcher = this.connection.play()
     }
