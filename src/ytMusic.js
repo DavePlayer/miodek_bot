@@ -53,10 +53,9 @@ class ytMeneger {
                     this.querry = this.querry.filter((o, i) => (i != 0 ? o : null))
                 })
                 .on("error", (err) => {
-                    message.channel.send(`error accured while playing music`)
+                    message.channel.send(`error accured while playing music. Replaying`)
+                    this.menagePlaying()
                     console.log(err)
-                    this.querry = []
-                    this.isPlaying = false
                 })
         } else {
             if (this.querry.length <= 1) {
