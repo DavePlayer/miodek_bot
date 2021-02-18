@@ -58,6 +58,11 @@ class ytMeneger {
                     this.menagePlaying()
                     console.log(err)
                 })
+                .on("disconnect", () => {
+                    this.isPlaying = false
+                    this.querry = []
+                    this.onChannel = null
+                })
         } else {
             if (this.querry.length <= 1) {
                 this.isPlaying = false
