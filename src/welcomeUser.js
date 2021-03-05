@@ -15,17 +15,11 @@ export const welcomeUser = (member) => {
     ]
     let randomNumber = Math.floor(Math.random() * welcomeMessages.length)
     let usedMessages = JSON.parse(fs.readFileSync("./usedMessages.json", "utf-8"))
-    console.log(`rondom number before: ${randomNumber}`)
     if (usedMessages.length >= welcomeMessages.length) usedMessages = []
-    while (
-        usedMessages.includes(welcomeMessages[randomNumber].slice(0, 20)) &&
-        usedMessages.length < welcomeMessages.length
-    ) {
+    while (usedMessages.includes(randomNumber)) {
         randomNumber = Math.floor(Math.random() * welcomeMessages.length)
     }
-    console.log(`rondom number after: ${randomNumber}`)
-    console.log(usedMessages)
-    usedMessages = [...usedMessages, welcomeMessages[randomNumber]]
+    usedMessages = [...usedMessages, randomNumber]
     fs.writeFileSync("./usedMessages.json", JSON.stringify(usedMessages))
     member.guild.channels.cache.get(process.env.DISCORD_WELCOME_CHANNEL).send(welcomeMessages[randomNumber])
 }
