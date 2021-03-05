@@ -56,7 +56,7 @@ Client.on("ready", async () => {
         Client.user.setPresence({
             status: "online", //You can show online, idle....
             activity: {
-                name: "Wants to commit suicide", //The message shown
+                name: process.env.STATUS, //The message shown
                 type: "PLAYING", //PLAYING: WATCHING: LISTENING: STREAMING:
             },
         })
