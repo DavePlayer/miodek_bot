@@ -21,16 +21,31 @@ class ytMeneger {
         message.channel.send("dddd")
     }
 
-    async menagePlaying() {
-        const message = this.message
-        try {
-            this.connection = await message.member.voice.channel.join()
-        } catch (err) {
-            message.channel.send(`error accoured: ${err}`)
-            console.log(err)
+    displayQuerry = (message) => {
+        if (this.querry.length > 0) {
+            this.querry.map((o, i) => {
+                console.log(o)
+                const embeded = new discord.MessageEmbed()
+                    .setColor("#0099ff")
+                    .setTitle(`${i}. ${o.tittle}`)
+                    .setImage(o.snippet.thumbnails.default.url)
+                if (o.tittle != null) message.channel.send(embeded)
+            })
+        } else {
+            message.channel.send(`Querry is empty right now BAKA!!`)
         }
+    }
+
+    joinChannel = () =>
+        new Promise((resolve, reject) => {
+            this.message.member.voice.channel
+                .join()
+                .then((o) => resolve((this.connection = o)))
+                .catch((err) => reject(err))
+        })
+
+    async menagePlaying(o) {
         if (this.querry[0] != "invalid") {
-            console.log(this.querry[0].snippet.thumbnails.medium)
             /*const embeded = new discord.MessageEmbed()
                 .setColor("#0099ff")
                 .setTitle(this.querry[0].tittle)
@@ -54,7 +69,7 @@ class ytMeneger {
                 })
                 .on("error", (err) => {
                     this.querry = this.querry.filter((o, i) => (i != 0 ? o : null))
-                    message.channel.send(`error accured while playing music. skiping song`)
+                    this.message.channel.send(`error accured while playing music. skiping song`)
                     this.menagePlaying()
                     console.log(err)
                 })
@@ -103,60 +118,88 @@ class ytMeneger {
         this.message.channel.send(embeded)
     }
 
-    async getYtLink(args) {
-        const link = args.join("")
-        if (link.includes("youtube.com") && typeof link == "string") {
-            const videoID = link.match(/.*(?:youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=)([^#\&\?]*).*/)
-            return fetch(
-                `https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics&id=${videoID[1]}&key=${process.env.YTAPIKEY}`
-            )
-                .then((o) => o.json())
-                .then((o) => {
-                    if (o.pageInfo.totalResults > 0) {
-                        this.displayMusicInfo(o)
-                        return {
-                            url: link,
-                            tittle: o.items[0].snippet.title,
-                            snippet: o.items[0].snippet,
+    getYtLink = (args) =>
+        new Promise((res, rej) => {
+            const link = args.join("")
+            if (link.includes("youtube.com") && typeof link == "string") {
+                const videoID = link.match(/.*(?:youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=)([^#\&\?]*).*/)
+                fetch(
+                    `https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics&id=${videoID[1]}&key=${process.env.YTAPIKEY}`
+                )
+                    .then((o) => o.json())
+                    .then((o) => {
+                        console.log(o)
+                        if (!o.error)
+                            if (o.pageInfo.totalResults > 0) {
+                                return res(o)
+                            } else {
+                                this.message.channel.send("invalid link")
+                                rej("invalid")
+                            }
+                        else {
+                            rej(o.error.message)
                         }
-                    } else this.message.channel.send("invalid link")
-                    return "invalid"
-                })
-        } else {
-            return fetch(
-                `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=20&q=${encodeURIComponent(
-                    args
-                )}&type=video&key=${process.env.YTAPIKEY}`
-            )
-                .then((o) => o.json())
-                .then((o) => {
-                    console.log(o.items[0])
-                    this.displayMusicInfo(o)
-                    return {
-                        url: o.items[0].id.videoId,
-                        tittle: o.items[0].snippet.title,
-                        snippet: o.items[0].snippet,
-                    }
-                })
-        }
-    }
-
+                    })
+            } else {
+                fetch(
+                    `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=20&q=${encodeURIComponent(
+                        args
+                    )}&type=video&key=${process.env.YTAPIKEY}`
+                )
+                    //url: o.items[0].id.videoId,
+                    //tittle: o.items[0].snippet.title,
+                    //snippet: o.items[0].snippet,
+                    .then((o) => o.json())
+                    .then((o) => {
+                        console.log("not error", o.error)
+                        if (o.error) rej(o.error.message)
+                        res(o)
+                    })
+                    .catch((err) => rej(err))
+            }
+        })
     async playMusic(message) {
-        console.log(this.isPlaying)
         if (this.isPlaying == false) {
             if (!message.member.voice.channel) return message.channel.send(`You rane not in any channel BAKA!!!`)
             this.message = message
             this.onChannel = message.member.voice.channel.id
             this.isPlaying = true
-            this.querry = [await this.getYtLink(message.content.split(" ").filter((o, i) => (i > 1 ? o : null)))]
-            this.menagePlaying()
+            this.getYtLink(message.content.split(" ").filter((o, i) => (i > 1 ? o : null)))
+                .then((o) => {
+                    if (o != "invalid") this.displayMusicInfo(o)
+                    console.log(`magic happend: `)
+                    const data = {
+                        url: o.items[0].id.videoId || o.items[0].id,
+                        tittle: o.items[0].snippet.title,
+                        snippet: o.items[0].snippet,
+                    }
+                    console.log("dataaaa: ", data)
+                    this.querry = [data]
+                    this.joinChannel()
+                        .then((o) => this.menagePlaying(o))
+                        .catch((err) => message.channel.send(`error accoured while joining: ${err}`))
+                })
+                .catch((err) => {
+                    this.querry = ["invalid"]
+                    this.message.channel.send(`here error madam: ${err}`)
+                })
         } else if (message.member.voice.channel.id == this.onChannel) {
             message.channel.send(`adding music to querry`)
             this.message = message
-            this.querry = [
-                ...this.querry,
-                await this.getYtLink(message.content.split(" ").filter((o, i) => (i > 1 ? o : null))),
-            ]
+            const link = this.getYtLink(message.content.split(" ").filter((o, i) => (i > 1 ? o : null)))
+                .then((o) => {
+                    if (o != "invalid") this.displayMusicInfo(o)
+                    const data = {
+                        url: o.items[0].id.videoId,
+                        tittle: o.items[0].snippet.title,
+                        snippet: o.items[0].snippet,
+                    }
+                    this.querry = [...this.querry, data]
+                })
+                .catch((err) => {
+                    this.message.channel.send(`${err}`)
+                    this.querry = [this.querry, "invalid"]
+                })
         } else message.channel.send(`I am playing already music on a diffrent channel Baka`)
     }
 }

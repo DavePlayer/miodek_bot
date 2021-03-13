@@ -86,6 +86,9 @@ Client.on("message", (message) => {
                 case command.includes("skip"):
                     ytMeneger.skipSong(message)
                     break
+                case command.includes("show list"):
+                    ytMeneger.displayQuerry(message)
+                    break
             }
         }
     }
