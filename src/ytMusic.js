@@ -62,9 +62,9 @@ class ytMeneger {
                     this.isPlaying = false
                     this.querry = []
                 } else {
+                    this.querry = this.querry.filter((o, i) => (i != 0 ? o : null))
                     this.menagePlaying()
                 }
-                this.querry = this.querry.filter((o, i) => (i != 0 ? o : null))
             })
             .on("error", (err) => {
                 this.querry = this.querry.filter((o, i) => (i != 0 ? o : null))
