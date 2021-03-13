@@ -27,7 +27,7 @@ class ytMeneger {
                 console.log(o)
                 const embeded = new discord.MessageEmbed()
                     .setColor("#0099ff")
-                    .setTitle(`${i}. ${o.tittle}`)
+                    .setTitle(i == 0 ? `Playing now: ${o.tittle}` : null || `${i}. ${o.tittle}`)
                     .setImage(o.snippet.thumbnails.default.url)
                 if (o.tittle != null) message.channel.send(embeded)
             })
@@ -44,61 +44,58 @@ class ytMeneger {
                 .catch((err) => reject(err))
         })
 
-    async menagePlaying(o) {
-        if (this.querry[0] != "invalid") {
-            /*const embeded = new discord.MessageEmbed()
-                .setColor("#0099ff")
-                .setTitle(this.querry[0].tittle)
-                .setAuthor(this.message.member.user.username, this.message.member.user.avatarURL())
-                .setDescription(this.querry[0].snippet.description)
-                .setThumbnail(this.querry[0].snippet.thumbnails.medium.url)
-                .setTimestamp()
-                .setFooter(`author: ${this.querry[0].snippet.channelTitle}`)
+    fixConnection = (message) => {
+        this.isPlaying = false
+        this.querry = []
+        this.onChannel = null
 
-            message.channel.send(embeded)*/
-            this.dispatcher = this.connection
-                .play(ytdl(this.querry[0].url, { filter: "audioonly", quality: "lowestaudio" }))
-                .on("finish", () => {
-                    if (this.querry.length <= 1) {
-                        this.isPlaying = false
-                        this.querry = []
-                    } else {
-                        this.menagePlaying()
-                    }
-                    this.querry = this.querry.filter((o, i) => (i != 0 ? o : null))
-                })
-                .on("error", (err) => {
-                    this.querry = this.querry.filter((o, i) => (i != 0 ? o : null))
-                    this.message.channel.send(`error accured while playing music. skiping song`)
-                    this.menagePlaying()
-                    console.log(err)
-                })
-                .on("disconnect", () => {
+        if (this.connection) this.connection.disconnect()
+
+        this.message.channel.send(`connection fixed`)
+    }
+
+    async menagePlaying(o) {
+        this.dispatcher = this.connection
+            .play(ytdl(this.querry[0].url, { filter: "audioonly", quality: "lowestaudio" }))
+            .on("finish", () => {
+                if (this.querry.length <= 1) {
                     this.isPlaying = false
                     this.querry = []
-                    this.onChannel = null
-                })
-        } else {
-            if (this.querry.length <= 1) {
+                } else {
+                    this.menagePlaying()
+                }
+                this.querry = this.querry.filter((o, i) => (i != 0 ? o : null))
+            })
+            .on("error", (err) => {
+                this.querry = this.querry.filter((o, i) => (i != 0 ? o : null))
+                this.message.channel.send(`error accured while playing music. skiping song`)
+                this.menagePlaying()
+                console.log(err)
+            })
+            .on("disconnect", () => {
                 this.isPlaying = false
                 this.querry = []
-            } else {
-                this.menagePlaying()
-            }
-            this.querry = this.querry.filter((o, i) => (i != 0 ? o : null))
-        }
-        // this.dispatcher = this.connection.play()
+                this.onChannel = null
+            })
+            .on("failed", () => {
+                this.isPlaying = false
+                this.querry = []
+                this.onChannel = null
+            })
     }
 
     skipSong(message) {
-        if (message.member.voice.channel.id == this.onChannel) {
-            this.dispatcher.end()
-            this.querry = this.querry.filter((o, i) => (i != 0 ? o : null))
-            if (this.querry.length > 0) {
-                message.channel.send(`skiped song BAKA!!`)
-                this.menagePlaying()
-            } else message.channel.send(`no music in querry BAKA!!`)
-        } else message.channel.send(`you are not on the same channel BAKA!!!`)
+        if (message.member.voice.channel)
+            if (message.member.voice.channel.id == this.onChannel) {
+                this.dispatcher.end()
+                this.querry = this.querry.filter((o, i) => i != 0 && o)
+                console.log(this.querry)
+                if (this.querry.length > 0) {
+                    message.channel.send(`skiped song BAKA!!`)
+                    this.menagePlaying()
+                } else message.channel.send(`no music in querry BAKA!!`)
+            } else message.channel.send(`you are not on the same channel BAKA!!!`)
+        else message.channel.send(`You are not on any channel BAKA!!!`)
     }
 
     displayMusicInfo(o) {
@@ -133,8 +130,7 @@ class ytMeneger {
                             if (o.pageInfo.totalResults > 0) {
                                 return res(o)
                             } else {
-                                this.message.channel.send("invalid link")
-                                rej("invalid")
+                                rej("invalid link")
                             }
                         else {
                             rej(o.error.message)
@@ -159,38 +155,34 @@ class ytMeneger {
             }
         })
     async playMusic(message) {
+        this.message = message
         if (this.isPlaying == false) {
             if (!message.member.voice.channel) return message.channel.send(`You rane not in any channel BAKA!!!`)
-            this.message = message
-            this.onChannel = message.member.voice.channel.id
-            this.isPlaying = true
             this.getYtLink(message.content.split(" ").filter((o, i) => (i > 1 ? o : null)))
                 .then((o) => {
-                    if (o != "invalid") this.displayMusicInfo(o)
-                    console.log(`magic happend: `)
+                    this.onChannel = message.member.voice.channel.id
+                    this.isPlaying = true
+                    this.displayMusicInfo(o)
                     const data = {
                         url: o.items[0].id.videoId || o.items[0].id,
                         tittle: o.items[0].snippet.title,
                         snippet: o.items[0].snippet,
                     }
-                    console.log("dataaaa: ", data)
                     this.querry = [data]
                     this.joinChannel()
                         .then((o) => this.menagePlaying(o))
                         .catch((err) => message.channel.send(`error accoured while joining: ${err}`))
                 })
                 .catch((err) => {
-                    this.querry = ["invalid"]
                     this.message.channel.send(`here error madam: ${err}`)
                 })
         } else if (message.member.voice.channel.id == this.onChannel) {
-            message.channel.send(`adding music to querry`)
-            this.message = message
-            const link = this.getYtLink(message.content.split(" ").filter((o, i) => (i > 1 ? o : null)))
+            this.getYtLink(message.content.split(" ").filter((o, i) => (i > 1 ? o : null)))
                 .then((o) => {
-                    if (o != "invalid") this.displayMusicInfo(o)
+                    message.channel.send(`adding music to querry`)
+                    this.displayMusicInfo(o)
                     const data = {
-                        url: o.items[0].id.videoId,
+                        url: o.items[0].id.videoId || o.items[0].id,
                         tittle: o.items[0].snippet.title,
                         snippet: o.items[0].snippet,
                     }
@@ -198,7 +190,6 @@ class ytMeneger {
                 })
                 .catch((err) => {
                     this.message.channel.send(`${err}`)
-                    this.querry = [this.querry, "invalid"]
                 })
         } else message.channel.send(`I am playing already music on a diffrent channel Baka`)
     }

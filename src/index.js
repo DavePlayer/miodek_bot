@@ -89,6 +89,9 @@ Client.on("message", (message) => {
                 case command.includes("show list"):
                     ytMeneger.displayQuerry(message)
                     break
+                case command.includes("fix connection"):
+                    ytMeneger.fixConnection(message)
+                    break
             }
         }
     }
