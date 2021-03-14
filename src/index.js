@@ -92,6 +92,43 @@ Client.on("message", (message) => {
                 case command.includes("fix connection"):
                     ytMeneger.fixConnection(message)
                     break
+                case command.includes("help"):
+                    const embeded = new discord.MessageEmbed()
+                        .setColor("#0099ff")
+                        .setTitle("Command list")
+                        .setDescription("Wyświetlenie wszelkich komend jakie są w miodku")
+                        .addFields(
+                            {
+                                name: "BOT save users",
+                                value:
+                                    "Tworzy listę wszystkich ról użytkowników którzy je posiadają i zapisuje je na serwerze by potem bot mógł je dodać po tym jak osoba wyjdzie i wejdzie",
+                            },
+                            {
+                                name: "BOT punish @user1 @user2 time",
+                                value: "dodaje rolę karną dla pingowanych użytkowników na określony czas",
+                            },
+                            {
+                                name: "BOT play youtube_link/custom_words",
+                                value:
+                                    "Dołącza do kanału na którym jest osoba która wpisała komendę i puszcza muzykę w czasie rzeczywistym. w przypadku odtwarzania już jakieś muzyki miodek tworzy listę i dodaję daną muzykę do kolejki by ją później puścić.",
+                            },
+                            {
+                                name: "BOT skip",
+                                value:
+                                    "W przypadku odtwarzania muzyki na kanale głosowym komenda pomiją odtwarzaną muzykę i w przypadku zaistnienia kolejnej w kolejce, puszcza ją",
+                            },
+                            {
+                                name: "BOT show list",
+                                value: "Pokazuje listę piosenek które mają być puszczone na kanale głosowym.",
+                            },
+                            {
+                                name: "BOT fix connection",
+                                value:
+                                    "Ponieważ biblioteka discorda jest ułomna i nie umie poprawnie wykryć kiedy bot jest połączony z kanałem głosowym, komenda ta w przypadku zaistnienia błędu przebywania bota na innym kanale programowo wyrzuca bota z danego kanału i czyści kolejkę muzyk.",
+                            }
+                        )
+                    message.channel.send(embeded)
+                    break
             }
         }
     }
