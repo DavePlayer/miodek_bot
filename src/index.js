@@ -5,7 +5,7 @@ import dotenv from "dotenv"
 import { makeUserList } from "./userList.js"
 import { startTwitchCheck } from "./startTwitchCheck.js"
 import { welcomeUser } from "./welcomeUser.js"
-import { rolePunish } from "./rolePunichment.js"
+import lastJudgment from "./rolePunichment.js"
 import fs from "fs"
 import ytMeneger from "./ytMusic.js"
 
@@ -77,7 +77,7 @@ Client.on("message", (message) => {
                     break
                 case command.includes("punish"):
                     const time = command.split(" ")
-                    rolePunish(Client, message.mentions.users, time[time.length - 1])
+                    lastJudgment.punishByRole(Client, message.mentions.users, time[time.length - 1])
                     break
                 case command.includes("play"):
                     ytMeneger.playMusic(message)
