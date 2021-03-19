@@ -1,44 +1,45 @@
 {
-  "name": "miodek_bot",
-  "version": "0.0.0",
-  "description": "simple bot which checks if user is streaming from twitch API",
-  "main": "index.js",
-  "type": "module",
-  "scripts": {
-    "build": "babel src --out-dir build",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "babel-node src/index.js"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/DavePlayer/miodek_bot.git"
-  },
-  "keywords": [
-    "miodek",
-    "discord",
-    "bot"
-  ],
-  "author": "Dave_Player",
-  "license": "GNU General Public License v3.0",
-  "bugs": {
-    "url": "https://github.com/DavePlayer/miodek_bot/issues"
-  },
-  "homepage": "https://github.com/DavePlayer/miodek_bot#readme",
-  "dependencies": {
-    "@babel/cli": "^7.13.0",
-    "@babel/polyfill": "^7.12.1",
-    "@babel/preset-env": "^7.13.9",
-    "discord.js": "^12.5.1",
-    "dotenv": "^8.2.0",
-    "express": "^4.17.1",
-    "node-fetch": "^2.6.1",
-    "nodemon": "^2.0.7",
-    "opusscript": "^0.0.8",
-    "rimraf": "^3.0.2",
-    "ytdl-core": "^4.5.0"
-  },
-  "devDependencies": {
-    "@babel/core": "^7.13.8",
-    "@babel/node": "^7.13.0"
-  }
+    "name": "miodek_bot",
+    "version": "0.0.0",
+    "description": "simple bot which checks if user is streaming from twitch API",
+    "main": "index.js",
+    "type": "module",
+    "scripts": {
+        "build": "babel src --out-dir build",
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "babel": "babel-node src/index.js",
+        "start": "node src/index.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/DavePlayer/miodek_bot.git"
+    },
+    "keywords": [
+        "miodek",
+        "discord",
+        "bot"
+    ],
+    "author": "Dave_Player",
+    "license": "GNU General Public License v3.0",
+    "bugs": {
+        "url": "https://github.com/DavePlayer/miodek_bot/issues"
+    },
+    "homepage": "https://github.com/DavePlayer/miodek_bot#readme",
+    "dependencies": {
+        "@babel/cli": "^7.13.0",
+        "@babel/polyfill": "^7.12.1",
+        "@babel/preset-env": "^7.13.9",
+        "discord.js": "^12.5.1",
+        "dotenv": "^8.2.0",
+        "express": "^4.17.1",
+        "node-fetch": "^2.6.1",
+        "nodemon": "^2.0.7",
+        "opusscript": "^0.0.8",
+        "rimraf": "^3.0.2",
+        "ytdl-core": "^4.5.0"
+    },
+    "devDependencies": {
+        "@babel/core": "^7.13.8",
+        "@babel/node": "^7.13.0"
+    }
 }
