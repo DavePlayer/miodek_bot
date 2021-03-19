@@ -114,55 +114,29 @@ class lastJudgment {
                                             })
                                         } else {
                                             let savedRoles = JSON.parse(fs.readFileSync("./roles.json", "utf-8"))
-                                            if (!savedRoles.some((o2) => o2.clientId == user.user.id)) {
-                                                savedRoles = [
-                                                    ...savedRoles.slice(0, savedRoles.length - 1),
-
-                                                    {
-                                                        name: user.user.username,
-                                                        clientId: user.user.id,
-                                                        roles: this.roles
-                                                            .filter((role) => {
-                                                                const filtredRoles = this.doomed.filter((freeDoomed) =>
-                                                                    freeDoomed.roles.includes(role.id)
-                                                                )
-                                                                console.log(filtredRoles)
-                                                                if (filtredRoles.length > 0) return role.name
-                                                            })
-                                                            .map((o) => o.name),
-                                                        user: user._roles,
-                                                    },
-                                                    savedRoles.pop(),
-                                                ]
-                                                console.log(savedRoles)
-                                                console.log(`zwalnianie użytkownika po pliku w którym nie istnieje`)
-                                                this.saveRoles(savedRoles, user)
-                                            } else {
-                                                console.log(savedRoles)
-                                                console.log(`zwalnianie użytkownika po pliku w którym istnieje`)
-                                                savedRoles.some((o) => {
-                                                    //pod dawidem
-                                                    if (o.clientId == user.user.id) {
-                                                        console.log("found doomed")
-                                                        o.roles = o.roles.filter(
-                                                            (role) => role != process.env.PUNISHMENT_ROLE && role
-                                                        )
-                                                        console.log(o.roles)
-                                                        o.roles = this.roles.map((role) => {
-                                                            const [data] = this.doomed.filter((doom) => {
-                                                                if (doom.id == user.user.id && doom.roles)
-                                                                    return doom.roles
-                                                            })
-                                                            console.log("doooomed", data)
-                                                            if (data.roles.includes(role.id)) return role.name
+                                            console.log(savedRoles)
+                                            console.log(`zwalnianie użytkownika po pliku w którym istnieje`)
+                                            savedRoles.some((o) => {
+                                                //pod dawidem
+                                                if (o.clientId == user.user.id) {
+                                                    console.log("found doomed")
+                                                    o.roles = o.roles.filter(
+                                                        (role) => role != process.env.PUNISHMENT_ROLE && role
+                                                    )
+                                                    console.log(o.roles)
+                                                    o.roles = this.roles.map((role) => {
+                                                        const [data] = this.doomed.filter((doom) => {
+                                                            if (doom.id == user.user.id && doom.roles) return doom.roles
                                                         })
-                                                        o.roles = o.roles.filter((ll) => ll)
-                                                        return 1
-                                                    }
-                                                })
-                                                console.log(savedRoles)
-                                                this.saveRoles(savedRoles, user)
-                                            }
+                                                        console.log("doooomed", data)
+                                                        if (data.roles.includes(role.id)) return role.name
+                                                    })
+                                                    o.roles = o.roles.filter((ll) => ll)
+                                                    return 1
+                                                }
+                                            })
+                                            console.log(savedRoles)
+                                            this.saveRoles(savedRoles, user)
                                             // releasing punishment role from saved roles file and returning old ones
                                         }
                                     }, parseFloat(time) * 1000 * 60)
