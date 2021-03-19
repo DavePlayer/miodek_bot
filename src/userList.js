@@ -3,12 +3,13 @@ import fs from "fs"
 class userDB {
     constructor() {
         this.users = []
+        this.temp = []
         this.roles = []
     }
 
     readClient(Client) {
         Client.guilds.cache.get(process.env.DISCORD_SERVER_ID).members.cache.forEach((user) => {
-            this.users = [...this.users, user]
+            this.temp = [...this.temp, user]
         })
         Client.guilds.cache.get(process.env.DISCORD_SERVER_ID).roles.cache.forEach((role) => {
             this.roles = [...this.roles, { id: role.id, name: role.name }]
@@ -24,7 +25,8 @@ class userDB {
     makeUserList = (message, Client) => {
         this.readClient(Client)
         let json = []
-        this.users.map((user) => {
+        this.temp.map((user) => {
+            console.log("roles: ---- ", user._roles)
             if (user._roles.length > 0)
                 json = [
                     ...json,
@@ -44,7 +46,14 @@ class userDB {
         const data = JSON.stringify(json)
         fs.writeFile("roles.json", data, (err) => {
             if (err) console.log(err)
-            else console.log(`----------\n this.users saved properly`)
+            else {
+                console.log(`----------\n this.users saved properly`)
+                console.log(json)
+                this.temp = []
+                this.roles = []
+                this.users = json
+                message.channel.send("users saved properly")
+            }
         })
     }
 
@@ -53,8 +62,10 @@ class userDB {
         if (this.users.length <= 1) this.makeUserList()
 
         Client.guilds.cache.get(process.env.DISCORD_SERVER_ID).members.cache.forEach((user) => {
+            let found = false
             this.users.some((o) => {
                 if (o.clientId && o.clientId == user.user.id) {
+                    found = true
                     o.roles = this.roles
                         .filter((role) => {
                             if (user._roles.includes(role.id)) return role.name
@@ -63,11 +74,30 @@ class userDB {
                     return o
                 }
             })
+            if (!found) {
+                this.users = [
+                    ...this.users,
+                    {
+                        name: user.user.username,
+                        clientId: user.user.id,
+                        roles: this.roles
+                            .filter((role) => {
+                                if (user._roles.includes(role.id)) return role.name
+                            })
+                            .map((o) => o.name),
+                        user: user._roles,
+                    },
+                ]
+            }
         })
         const data = JSON.stringify([...this.users, { roles: this.roles }])
         fs.writeFile("roles.json", data, (err) => {
             if (err) console.log(err)
-            else console.log(`----------\n this.users updated properly`)
+            else {
+                console.log(`----------\n this.users updated properly`)
+                this.users = []
+                this.roles = []
+            }
         })
         console.log(this.users, this.roles)
     }
