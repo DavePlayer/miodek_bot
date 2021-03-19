@@ -2,7 +2,7 @@ import discord from "discord.js"
 import express from "express"
 import "@babel/polyfill"
 import dotenv from "dotenv"
-import { makeUserList } from "./userList.js"
+import userDB from "./userList.js"
 import { startTwitchCheck } from "./startTwitchCheck.js"
 import { welcomeUser } from "./welcomeUser.js"
 import lastJudgment from "./rolePunichment.js"
@@ -73,7 +73,7 @@ Client.on("message", (message) => {
             const command = regex[1]
             switch (true) {
                 case command.includes("save users"):
-                    makeUserList(message, Client)
+                    userDB.makeUserList(message, Client)
                     break
                 case command.includes("punish"):
                     const time = command.split(" ")
@@ -135,7 +135,7 @@ Client.on("message", (message) => {
 
 Client.on("guildMemberUpdate", (member) => {
     // niby dziala na kazda zmiane roi, ale tez zmianie pseudonimu jak i usuniecie albo dodanie uzytkownika
-    makeUserList(member, Client)
+    userDB.makeUserList(member, Client)
 })
 
 Client.on("guildMemberAdd", (member) => {
