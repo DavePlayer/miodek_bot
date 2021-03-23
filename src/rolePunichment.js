@@ -8,12 +8,23 @@ class lastJudgment {
         this.user = null
     }
 
-    readDoomed(message, Client) {
+    readDoomed(Client) {
         this.doomed = JSON.parse(fs.readFileSync("./punishedUsers.json", "utf-8"))
-        const file = fs.readFileSync("./roles.json", "utf-8")
-        if (file.length < 1) userDB.makeUserList(message, Client)
-        const { roles } = JSON.parse(file).pop()
-        this.roles = roles
+        const file = fs.readFile("./roles.json", "utf-8", (err, data) => {
+            if (err) console.log(err)
+            console.log(`----------------------\n`, data, "\n--------------------")
+            if (data.toString().length <= 1) {
+                userDB.makeUserList("dsa", Client, (data2) => {
+                    console.log(data2)
+                    const json = JSON.parse(data2)
+                    if (json.length > 0) this.roles = json.pop().roles
+                })
+            } else {
+                console.log(data)
+                const json = JSON.parse(data)
+                if (json.length > 0) this.roles = json.pop().roles
+            }
+        })
     }
 
     saveDoomed(humanData) {
@@ -29,9 +40,9 @@ class lastJudgment {
         fs.writeFileSync("./punishedUsers.json", JSON.stringify(this.doomed))
     }
 
-    punishByRole(Client, users, time, message) {
+    punishByRole(Client, users, time) {
         console.log(users)
-        this.readDoomed(message, Client)
+        this.readDoomed(Client)
         // Goes for every user on server and checks if user is still on server
         Client.guilds.cache.get(process.env.DISCORD_SERVER_ID).members.cache.forEach((user) => {
             this.user = user
@@ -65,7 +76,7 @@ class lastJudgment {
                                     setTimeout(async () => {
                                         console.log("------------\n zwalnianie użytkownika \n")
                                         console.log(this.doomed)
-                                        this.readDoomed(message, Client)
+                                        this.readDoomed(Client)
 
                                         //checking if user is still on server
                                         let isUserOnServer = false

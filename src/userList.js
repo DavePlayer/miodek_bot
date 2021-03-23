@@ -17,12 +17,18 @@ class userDB {
     }
 
     readFile() {
-        this.users = JSON.parse(fs.readFileSync("./roles.json", "utf-8"))
-        const { roles } = this.users.pop()
-        this.roles = roles
+        const file = fs.readFileSync("./roles.json", "utf-8")
+        console.log(file.toString().length)
+        if (file.toString("utf-8").length > 2) {
+            this.users = JSON.parse(file)
+        }
+        if (this.users.length > 0) {
+            const { roles } = this.users.pop()
+            this.roles = roles
+        }
     }
 
-    makeUserList = (message, Client) => {
+    makeUserList = (message, Client, next) => {
         this.readClient(Client)
         let json = []
         this.temp.map((user) => {
@@ -49,17 +55,18 @@ class userDB {
             else {
                 console.log(`----------\n this.users saved properly`)
                 console.log(json)
+                if (next) next(data)
                 this.temp = []
                 this.roles = []
                 this.users = json
-                message.channel.send("users saved properly")
+                if (typeof message != "string") message.channel.send("users saved properly")
             }
         })
     }
 
     updateUserList(Client) {
         this.readFile()
-        if (this.users.length <= 1) this.makeUserList()
+        if (this.users.length <= 1) this.makeUserList("sth", Client)
 
         Client.guilds.cache.get(process.env.DISCORD_SERVER_ID).members.cache.forEach((user) => {
             let found = false
