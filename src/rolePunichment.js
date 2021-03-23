@@ -1,4 +1,5 @@
 import fs from "fs"
+import userDB from "./userList.js"
 
 class lastJudgment {
     constructor() {
@@ -7,9 +8,11 @@ class lastJudgment {
         this.user = null
     }
 
-    readDoomed() {
+    readDoomed(message, Client) {
         this.doomed = JSON.parse(fs.readFileSync("./punishedUsers.json", "utf-8"))
-        const { roles } = JSON.parse(fs.readFileSync("./roles.json", "utf-8")).pop()
+        const file = fs.readFileSync("./roles.json", "utf-8")
+        if (file.length < 1) userDB.makeUserList(message, Client)
+        const { roles } = JSON.parse(file).pop()
         this.roles = roles
     }
 
@@ -26,9 +29,9 @@ class lastJudgment {
         fs.writeFileSync("./punishedUsers.json", JSON.stringify(this.doomed))
     }
 
-    punishByRole(Client, users, time) {
+    punishByRole(Client, users, time, message) {
         console.log(users)
-        this.readDoomed()
+        this.readDoomed(message, Client)
         // Goes for every user on server and checks if user is still on server
         Client.guilds.cache.get(process.env.DISCORD_SERVER_ID).members.cache.forEach((user) => {
             this.user = user
@@ -62,7 +65,7 @@ class lastJudgment {
                                     setTimeout(async () => {
                                         console.log("------------\n zwalnianie użytkownika \n")
                                         console.log(this.doomed)
-                                        this.readDoomed()
+                                        this.readDoomed(message, Client)
 
                                         //checking if user is still on server
                                         let isUserOnServer = false

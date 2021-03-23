@@ -77,7 +77,7 @@ Client.on("message", (message) => {
                     break
                 case command.includes("punish"):
                     const time = command.split(" ")
-                    lastJudgment.punishByRole(Client, message.mentions.users, time[time.length - 1])
+                    lastJudgment.punishByRole(Client, message.mentions.users, time[time.length - 1], message)
                     break
                 case command.includes("play"):
                     ytMeneger.playMusic(message)
