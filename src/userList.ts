@@ -1,17 +1,24 @@
 import fs from "fs"
+import discord, {GuildChannel} from 'discord.js'
+import { user, role, json }from './interfaces'
 
 class userDB {
+    users: Array<user>
+    temp: Array<discord.GuildMember>
+    roles: Array<role>
+
     constructor() {
         this.users = []
         this.temp = []
         this.roles = []
     }
 
-    readClient(Client) {
-        Client.guilds.cache.get(process.env.DISCORD_SERVER_ID).members.cache.forEach((user) => {
+    readClient(Client:discord.Client) {
+        (Client.guilds.cache.get(process.env.DISCORD_SERVER_ID as string) as discord.Guild).members.cache.forEach((user: discord.GuildMember) => {
             this.temp = [...this.temp, user]
-        })
-        Client.guilds.cache.get(process.env.DISCORD_SERVER_ID).roles.cache.forEach((role) => {
+        });
+
+        (Client.guilds.cache.get(process.env.DISCORD_SERVER_ID as string) as discord.Guild).roles.cache.forEach((role: discord.Role) => {
             this.roles = [...this.roles, { id: role.id, name: role.name }]
         })
     }
@@ -19,21 +26,20 @@ class userDB {
     readFile() {
         const file = fs.readFileSync("./roles.json", "utf-8")
         console.log(file.toString().length)
-        if (file.toString("utf-8").length > 2) {
-            this.users = JSON.parse(file)
+        if (file.toString().length > 2) {
+            this.users = JSON.parse(file).users
         }
         if (this.users.length > 0) {
-            const { roles } = this.users.pop()
-            this.roles = roles
+            this.roles = JSON.parse(file).roles
         }
     }
 
-    makeUserList = (message, Client, next) => {
+    makeUserList = (message:discord.Message | string, Client:discord.Client, next?: (data:string) => void ) => {
         this.readClient(Client)
-        let json = []
-        this.temp.map((user) => {
-            console.log("roles: ---- ", user._roles)
-            if (user._roles.length > 0)
+        let json: [] | Array<user> = []
+        this.temp.map((user: any) => {
+            console.log("roles: ---- ", user.roles)
+            if (user.roles.length > 0)
                 json = [
                     ...json,
                     {
@@ -41,15 +47,15 @@ class userDB {
                         clientId: user.user.id,
                         roles: this.roles
                             .filter((role) => {
-                                if (user._roles.includes(role.id)) return role.name
+                                if (user.roles.includes(role.id)) return role.name
                             })
                             .map((o) => o.name),
-                        user: user._roles,
+                        user: user.roles,
                     },
                 ]
         })
-        json = [...json, { roles: this.roles }]
-        const data = JSON.stringify(json)
+        const obj:json = {users: json, roles: this.roles }
+        const data: string = JSON.stringify(obj)
         fs.writeFile("roles.json", data, (err) => {
             if (err) console.log(err)
             else {
@@ -64,18 +70,18 @@ class userDB {
         })
     }
 
-    updateUserList(Client) {
-        this.readFile()
-        if (this.users.length <= 1) this.makeUserList("sth", Client)
+    updateUserList(Client: discord.Client) {
+        this.readFile();
+        if (this.users.length <= 1) this.makeUserList("sth", Client);
 
-        Client.guilds.cache.get(process.env.DISCORD_SERVER_ID).members.cache.forEach((user) => {
+        (Client.guilds.cache.get(process.env.DISCORD_SERVER_ID as string) as discord.Guild).members.cache.forEach((user:any) => {
             let found = false
             this.users.some((o) => {
                 if (o.clientId && o.clientId == user.user.id) {
                     found = true
                     o.roles = this.roles
                         .filter((role) => {
-                            if (user._roles.includes(role.id)) return role.name
+                            if (user.roles.includes(role.id)) return role.name
                         })
                         .map((o) => o.name)
                     return o
@@ -89,15 +95,15 @@ class userDB {
                         clientId: user.user.id,
                         roles: this.roles
                             .filter((role) => {
-                                if (user._roles.includes(role.id)) return role.name
+                                if (user.roles.includes(role.id)) return role.name
                             })
                             .map((o) => o.name),
-                        user: user._roles,
+                        user: user.roles,
                     },
                 ]
             }
         })
-        const data = JSON.stringify([...this.users, { roles: this.roles }])
+        const data:string = JSON.stringify({users: this.users,  roles: this.roles })
         fs.writeFile("roles.json", data, (err) => {
             if (err) console.log(err)
             else {

@@ -1,8 +1,8 @@
 import node_fetch from "node-fetch";
-import discord from "discord.js";
+import discord, {Client, TextChannel} from "discord.js";
 const fetch = node_fetch;
 
-export const startTwitchCheck = async (Client) => {
+export const startTwitchCheck = async (Client: Client) => {
     console.log("checking twitch status");
     // Client.channels.cache.get('748643741874782318').send('Dzień dobry. Od dziś będę pomagał w śledz... znaczy się pomaganiu mihalxowi w wypisywaniu kiedy będzie streamować')
     let isStreaming = false;
@@ -32,15 +32,15 @@ export const startTwitchCheck = async (Client) => {
                 .setURL(`${StreamData.stream.channel.url}`)
 
                 .setImage(`${StreamData.stream.preview.large}`);
-            Client.channels.cache
-                .get(process.env.DISCORD_CHANNEL)
+            (Client.channels.cache
+                .get(process.env.DISCORD_CHANNEL as string) as TextChannel)
                 .send(
                     `@everyone ${process.env.TWITCH_USERNAME} teraz streamuje`,
                     embeded
                 );
         } else if (!StreamData.stream && isStreaming == true) {
             isStreaming = false;
-            //clearInform()
+            clearInform()
         }
     }, 1000 * 60);
 };

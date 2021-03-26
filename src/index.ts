@@ -1,4 +1,4 @@
-import discord from "discord.js"
+import discord, {GuildMember, PartialGuildMember, RoleResolvable, TextChannel} from "discord.js"
 import express from "express"
 import "@babel/polyfill"
 import dotenv from "dotenv"
@@ -8,21 +8,20 @@ import { welcomeUser } from "./welcomeUser.js"
 import lastJudgment from "./rolePunichment.js"
 import fs from "fs"
 import ytMeneger from "./ytMusic.js"
+import { user } from './interfaces'
 
 dotenv.config()
-export let usedMessages = []
 
 export const Client = new discord.Client()
 ytMeneger.setClient(Client)
-const Guild = new discord.Guild(Client)
-const app = express()
+const app: express.Application = express()
 app.use(express.json())
 
 const getFileJson = () => {
     return JSON.parse(fs.readFileSync("./roles.json", "utf-8"))
 }
 
-app.post("/send", (req, res) => {
+app.post("/send", (req: express.Request, res: express.Response) => {
     console.log(req.body)
     // http post body structure
     //{
@@ -34,16 +33,16 @@ app.post("/send", (req, res) => {
     if (req.body.type == "sendMessage" && req.body.channel.length > 0 && req.body.channelId) {
         switch (req.body.channel) {
             case "bot":
-                Client.channels.cache.get(process.env.DISCORD_COMMAND_CHANNEL).send(req.body.message)
+                (Client.channels.cache.get(process!.env!.DISCORD_COMMAND_CHANNEL || '') as TextChannel).send(req.body.message)
                 break
             case "info-social":
-                Client.channels.cache.get(process.env.DISCORD_CHANNEL).send(req.body.message)
+                (Client.channels.cache.get(process.env.DISCORD_CHANNEL || '') as TextChannel).send(req.body.message)
                 break
             case "ogolny":
-                Client.channels.cache.get(process.env.DISCORD_MAIN_CHANNEL).send(req.body.message)
+                (Client.channels.cache.get(process.env.DISCORD_MAIN_CHANNEL || '') as TextChannel).send(req.body.message)
                 break
             default:
-                Client.channels.cache.get(req.body.channelId).send(req.body.message)
+                (Client.channels.cache.get(req.body.channelId) as TextChannel).send(req.body.message)
                 break
         }
     }
@@ -53,7 +52,7 @@ app.post("/send", (req, res) => {
 Client.on("ready", async () => {
     startTwitchCheck(Client)
     try {
-        Client.user.setPresence({
+        Client.user?.setPresence({
             status: "online", //You can show online, idle....
             activity: {
                 name: process.env.STATUS, //The message shown
@@ -63,8 +62,7 @@ Client.on("ready", async () => {
     } catch (err) {
         throw err
     }
-})
-
+}) 
 Client.on("message", (message) => {
     console.log(message.channel.id)
     if (message.channel.id == process.env.DISCORD_COMMAND_CHANNEL && message.content.includes("BOT")) {
@@ -77,7 +75,7 @@ Client.on("message", (message) => {
                     break
                 case command.includes("punish"):
                     const time = command.split(" ")
-                    lastJudgment.punishByRole(Client, message.mentions.users, time[time.length - 1], message)
+                    lastJudgment.punishByRole(Client, message.mentions.users, time[time.length - 1])
                     break
                 case command.includes("play"):
                     ytMeneger.playMusic(message)
@@ -133,21 +131,21 @@ Client.on("message", (message) => {
     }
 })
 
-Client.on("guildMemberUpdate", (member) => {
+Client.on("guildMemberUpdate", (member: GuildMember | PartialGuildMember) => {
     // niby dziala na kazda zmiane roi, ale tez zmianie pseudonimu jak i usuniecie albo dodanie uzytkownika
     userDB.updateUserList(Client)
 })
 
-Client.on("guildMemberAdd", (member) => {
+Client.on("guildMemberAdd", (member: GuildMember | PartialGuildMember) => {
     console.log("welcoming user")
     welcomeUser(member)
     // member.roles.add(member.guild.roles.cache.find(r => r.name == 'debil'))
 
     // user roles validation and assignment
-    getFileJson().map((o) => {
+    getFileJson().users.map((o: user) => {
         if (typeof o.clientId != "undefined" && o.clientId)
-            if (o.clientId == member.user.id) {
-                o.roles.map((role) => member.roles.add(member.guild.roles.cache.find((r) => r.name == role)))
+            if (o.clientId == member.user?.id) {
+                o.roles.map((role: string) => member.roles.add(member.guild.roles.cache.find((r: discord.Role) => r.name == role) as RoleResolvable))
             }
     })
 })

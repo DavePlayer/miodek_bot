@@ -1,20 +1,29 @@
 import fs from "fs"
-import userDB from "./userList.js"
+import discord from 'discord.js'
+import userDB from "./userList"
+import { role } from './interfaces'
+
+interface IDommed { id: string, roles: Array<role>}
+
 
 class lastJudgment {
+    doomed:  Array<IDommed>
+    roles:  Array<string>
+    user: {} | discord.User
+
     constructor() {
-        this.doomed = null
-        this.roles = null
-        this.user = null
+        this.doomed = []
+        this.roles = []
+        this.user = {}
     }
 
-    readDoomed(Client) {
+    readDoomed(Client: discord.Client) {
         this.doomed = JSON.parse(fs.readFileSync("./punishedUsers.json", "utf-8"))
-        const file = fs.readFile("./roles.json", "utf-8", (err, data) => {
+        fs.readFile("./roles.json", "utf-8", (err, data) => {
             if (err) console.log(err)
             console.log(`----------------------\n`, data, "\n--------------------")
             if (data.toString().length <= 1) {
-                userDB.makeUserList("dsa", Client, (data2) => {
+                userDB.makeUserList("dsa", Client, (data2: any) => {
                     console.log(data2)
                     const json = JSON.parse(data2)
                     if (json.length > 0) this.roles = json.pop().roles
@@ -27,12 +36,12 @@ class lastJudgment {
         })
     }
 
-    saveDoomed(humanData) {
+    saveDoomed(humanData: IDommed) {
         this.doomed = [...this.doomed, humanData]
         fs.writeFileSync("./punishedUsers.json", JSON.stringify(this.doomed))
     }
 
-    saveRoles(savedRoles, user) {
+    saveRoles(savedRoles: any, user: any) {
         fs.writeFileSync("./roles.json", JSON.stringify(savedRoles))
         this.doomed = this.doomed.filter((o) => {
             if (o.id != user.user.id) return user
@@ -40,11 +49,13 @@ class lastJudgment {
         fs.writeFileSync("./punishedUsers.json", JSON.stringify(this.doomed))
     }
 
-    punishByRole(Client, users, time) {
-        console.log(users)
+    punishByRole(Client: discord.Client, users: any, time: string) {
+        console.log('coś działa XD')
+        //gonna be rewriten either way, so for now it's unnecessary
+/*        console.log(users)
         this.readDoomed(Client)
         // Goes for every user on server and checks if user is still on server
-        Client.guilds.cache.get(process.env.DISCORD_SERVER_ID).members.cache.forEach((user) => {
+        Client.guilds.cache.get(process.env.DISCORD_SERVER_ID).members.cache.forEach((user: discord.user) => {
             this.user = user
             if (users.has(this.user.user.id) && isNaN(time) != true) {
                 if (this.doomed.some((o) => o.id == this.user.user.id)) {
@@ -62,7 +73,7 @@ class lastJudgment {
                         .then(() => {
                             // add punishment role
                             user.roles
-                                .add(user.guild.roles.cache.find((r) => r.name == process.env.PUNISHMENT_ROLE && r))
+                                .add(user.guild.roles.cache.find((r: discord.role) => r.name == process.env.PUNISHMENT_ROLE && r))
                                 .then(() => {
                                     console.log(this.doomed)
 
@@ -82,7 +93,7 @@ class lastJudgment {
                                         let isUserOnServer = false
                                         Client.guilds.cache
                                             .get(process.env.DISCORD_SERVER_ID)
-                                            .members.cache.some((newUsers) => {
+                                            .members.cache.some((newUsers: discord.members) => {
                                                 if (newUsers.user.id == user.user.id) {
                                                     isUserOnServer = true
                                                     return 1
@@ -97,17 +108,17 @@ class lastJudgment {
                                                     console.log(`DOOMED FOUND: ${o.roles}`)
                                                     user.roles.member.roles
                                                         .add(o.roles)
-                                                        .then((afterUser) => {
+                                                        .then((afterUser: discord.user) => {
                                                             //after add ing this  console log it started working
                                                             /*console.log(
                                                                 user.guild.roles.cache.find(
                                                                     (r) => r.name == process.env.PUNISHMENT_ROLE && r
                                                                 )
-                                                            )*/
+                                                            )
                                                             afterUser.roles
                                                                 .remove(
                                                                     user.guild.roles.cache.find(
-                                                                        (r) =>
+                                                                        (r: discord.role) =>
                                                                             r.name == process.env.PUNISHMENT_ROLE && r
                                                                     )
                                                                 )
@@ -120,17 +131,17 @@ class lastJudgment {
                                                                         JSON.stringify(this.doomed)
                                                                     )
                                                                 })
-                                                                .catch((err) => console.log(err))
+                                                                .catch((err: discord.err) => console.log(err))
                                                             return 1
                                                         })
-                                                        .catch((err) => console.log(err))
+                                                        .catch((err: discord.err) => console.log(err))
                                                 }
                                             })
                                         } else {
-                                            let savedRoles = JSON.parse(fs.readFileSync("./roles.json", "utf-8"))
+                                            let savedRoles: roles = JSON.parse(fs.readFileSync("./roles.json", "utf-8"))
                                             console.log(savedRoles)
                                             console.log(`zwalnianie użytkownika po pliku w którym istnieje`)
-                                            savedRoles.some((o) => {
+                                            savedRoles.some((o: user | rolesArray) => {
                                                 //pod dawidem
                                                 if (o.clientId == user.user.id) {
                                                     console.log("found doomed")
@@ -138,7 +149,7 @@ class lastJudgment {
                                                         (role) => role != process.env.PUNISHMENT_ROLE && role
                                                     )
                                                     console.log(o.roles)
-                                                    o.roles = this.roles.map((role) => {
+                                                    o.roles =this.roles.filter((role: role) => {
                                                         const [data] = this.doomed.filter((doom) => {
                                                             if (doom.id == user.user.id && doom.roles) return doom.roles
                                                         })
@@ -162,7 +173,7 @@ class lastJudgment {
             } else {
                 console.log("not this user or time invalid")
             }
-        })
+        })*/
     }
 }
 

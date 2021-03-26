@@ -3,6 +3,15 @@ import fetch from "node-fetch"
 import discord from "discord.js"
 
 class ytMeneger {
+    Client: discord.Client | null
+    dispatcher: discord.StreamDispatcher | null
+    connection: discord.VoiceConnection | null
+    message: discord.Message | null
+    querry: Array<any>
+    isPlaying: boolean
+    onChannel: string | null
+
+
     constructor() {
         this.Client = null
         this.dispatcher = null
@@ -13,15 +22,15 @@ class ytMeneger {
         this.onChannel = null
     }
 
-    setClient(Client) {
+    setClient(Client: discord.Client) {
         this.Client = Client
     }
 
-    respond(message) {
+    respond(message: discord.Message) {
         message.channel.send("dddd")
     }
 
-    displayQuerry = (message) => {
+    displayQuerry = (message: discord.Message) => {
         if (this.querry.length > 0) {
             this.querry.map((o, i) => {
                 console.log(o)
@@ -38,24 +47,24 @@ class ytMeneger {
 
     joinChannel = () =>
         new Promise((resolve, reject) => {
-            this.message.member.voice.channel
+            (this.message!.member!.voice.channel as discord.VoiceChannel)
                 .join()
                 .then((o) => resolve((this.connection = o)))
                 .catch((err) => reject(err))
         })
 
-    fixConnection = (message) => {
+    fixConnection = (message: discord.Message) => {
         this.isPlaying = false
         this.querry = []
         this.onChannel = null
 
         if (this.connection) this.connection.disconnect()
 
-        this.message.channel.send(`connection fixed`)
+        message.channel.send(`connection fixed`)
     }
 
-    async menagePlaying(o) {
-        this.dispatcher = this.connection
+    async menagePlaying() {
+        this.dispatcher = this!.connection
             .play(ytdl(this.querry[0].url, { filter: "audioonly", quality: "lowestaudio" }))
             .on("finish", () => {
                 if (this.querry.length <= 1) {
@@ -84,7 +93,7 @@ class ytMeneger {
             })
     }
 
-    skipSong(message) {
+    skipSong(message:discord.Message) {
         if (message.member.voice.channel)
             if (message.member.voice.channel.id == this.onChannel) {
                 this.dispatcher.end()
@@ -98,7 +107,8 @@ class ytMeneger {
         else message.channel.send(`You are not on any channel BAKA!!!`)
     }
 
-    displayMusicInfo(o) {
+    // any because youtube api json is huge as fuc* and i can't find types for that
+    displayMusicInfo(o:any) {
         const embeded = new discord.MessageEmbed()
             .setColor("#0099ff")
             .setTitle(o.items[0].snippet.title)
@@ -115,9 +125,9 @@ class ytMeneger {
         this.message.channel.send(embeded)
     }
 
-    getYtLink = (args) =>
+    getYtLink = (args:string | Array<string>) =>
         new Promise((res, rej) => {
-            const link = args.join("")
+            const link = (args as Array<string>).join("")
             if (link.includes("youtube.com") && typeof link == "string") {
                 const videoID = link.match(/.*(?:youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=)([^#\&\?]*).*/)
                 fetch(
@@ -139,7 +149,7 @@ class ytMeneger {
             } else {
                 fetch(
                     `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=20&q=${encodeURIComponent(
-                        args
+                        args as string
                     )}&type=video&key=${process.env.YTAPIKEY}`
                 )
                     //url: o.items[0].id.videoId,
@@ -154,12 +164,13 @@ class ytMeneger {
                     .catch((err) => rej(err))
             }
         })
-    async playMusic(message) {
+    async playMusic(message:discord.Message) {
         this.message = message
         if (this.isPlaying == false) {
             if (!message.member.voice.channel) return message.channel.send(`You rane not in any channel BAKA!!!`)
             this.getYtLink(message.content.split(" ").filter((o, i) => (i > 1 ? o : null)))
-                .then((o) => {
+                //yt api has huge json without types
+                .then((o:any) => {
                     this.onChannel = message.member.voice.channel.id
                     this.isPlaying = true
                     this.displayMusicInfo(o)
@@ -170,7 +181,7 @@ class ytMeneger {
                     }
                     this.querry = [data]
                     this.joinChannel()
-                        .then((o) => this.menagePlaying(o))
+                        .then(() => this.menagePlaying())
                         .catch((err) => message.channel.send(`error accoured while joining: ${err}`))
                 })
                 .catch((err) => {
@@ -178,7 +189,7 @@ class ytMeneger {
                 })
         } else if (message.member.voice.channel.id == this.onChannel) {
             this.getYtLink(message.content.split(" ").filter((o, i) => (i > 1 ? o : null)))
-                .then((o) => {
+                .then((o:any) => {
                     message.channel.send(`adding music to querry`)
                     this.displayMusicInfo(o)
                     const data = {
