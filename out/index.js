@@ -17,15 +17,15 @@ const discord_js_1 = __importDefault(require("discord.js"));
 const express_1 = __importDefault(require("express"));
 require("@babel/polyfill");
 const dotenv_1 = __importDefault(require("dotenv"));
-const userList_js_1 = __importDefault(require("./userList.js"));
-const startTwitchCheck_js_1 = require("./startTwitchCheck.js");
-const welcomeUser_js_1 = require("./welcomeUser.js");
-const rolePunichment_js_1 = __importDefault(require("./rolePunichment.js"));
+const userList_1 = __importDefault(require("./userList"));
+const welcomeUser_1 = require("./welcomeUser");
+const rolePunichment_1 = __importDefault(require("./rolePunichment"));
 const fs_1 = __importDefault(require("fs"));
-const ytMusic_js_1 = __importDefault(require("./ytMusic.js"));
+const ytMusic_1 = __importDefault(require("./ytMusic"));
+const timer_1 = __importDefault(require("./timer"));
 dotenv_1.default.config();
 exports.Client = new discord_js_1.default.Client();
-ytMusic_js_1.default.setClient(exports.Client);
+ytMusic_1.default.setClient(exports.Client);
 const app = express_1.default();
 app.use(express_1.default.json());
 const getFileJson = () => {
@@ -60,8 +60,9 @@ app.post("/send", (req, res) => {
 });
 exports.Client.on("ready", () => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
-    startTwitchCheck_js_1.startTwitchCheck(exports.Client);
     try {
+        //Clock.addStaticReminder({time: new Date(2021, 3, 30, 20, 29, 0, 0), func: () => startTwitchCheck(Client) })
+        timer_1.default.startClock();
         (_a = exports.Client.user) === null || _a === void 0 ? void 0 : _a.setPresence({
             status: "online",
             activity: {
@@ -82,23 +83,25 @@ exports.Client.on("message", (message) => {
             const command = regex[1];
             switch (true) {
                 case command.includes("save users"):
-                    userList_js_1.default.makeUserList(message, exports.Client);
+                    userList_1.default.makeUserList(message, exports.Client);
                     break;
                 case command.includes("punish"):
                     const time = command.split(" ");
-                    rolePunichment_js_1.default.punishByRole(exports.Client, message.mentions.users, time[time.length - 1]);
+                    //lastJudgment.punishByRole(Client, message, time[time.length - 1])
+                    rolePunichment_1.default.punishInit(exports.Client, message, time[time.length - 1]);
+                    timer_1.default.addDynamicReminder({ time: new Date(Date.now() + parseFloat(time[time.length - 1]) * 1000 * 60), func: () => console.log('punish that bitch') });
                     break;
                 case command.includes("play"):
-                    ytMusic_js_1.default.playMusic(message);
+                    ytMusic_1.default.playMusic(message);
                     break;
                 case command.includes("skip"):
-                    ytMusic_js_1.default.skipSong(message);
+                    ytMusic_1.default.skipSong(message);
                     break;
                 case command.includes("show list"):
-                    ytMusic_js_1.default.displayQuerry(message);
+                    ytMusic_1.default.displayQuerry(message);
                     break;
                 case command.includes("fix connection"):
-                    ytMusic_js_1.default.fixConnection(message);
+                    ytMusic_1.default.fixConnection(message);
                     break;
                 case command.includes("help"):
                     const embeded = new discord_js_1.default.MessageEmbed()
@@ -132,11 +135,11 @@ exports.Client.on("message", (message) => {
 });
 exports.Client.on("guildMemberUpdate", (member) => {
     // niby dziala na kazda zmiane roi, ale tez zmianie pseudonimu jak i usuniecie albo dodanie uzytkownika
-    userList_js_1.default.updateUserList(exports.Client);
+    userList_1.default.updateUserList(exports.Client);
 });
 exports.Client.on("guildMemberAdd", (member) => {
     console.log("welcoming user");
-    welcomeUser_js_1.welcomeUser(member);
+    welcomeUser_1.welcomeUser(member);
     // member.roles.add(member.guild.roles.cache.find(r => r.name == 'debil'))
     // user roles validation and assignment
     getFileJson().users.map((o) => {

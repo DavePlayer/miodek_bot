@@ -6,12 +6,23 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const fs_1 = __importDefault(require("fs"));
 class userDB {
     constructor() {
+        this.readFile = (Client) => new Promise((res, rej) => {
+            const file = fs_1.default.readFileSync("./roles.json", "utf-8");
+            if (file.toString().length > 2) {
+                this.users = JSON.parse(file).users;
+                this.roles = JSON.parse(file).roles;
+                res(true);
+            }
+            else {
+                rej(false);
+            }
+            console.log(file);
+        });
         this.makeUserList = (message, Client, next) => {
             this.readClient(Client);
             let json = [];
             this.temp.map((user) => {
-                console.log("roles: ---- ", user.roles);
-                if (user.roles.length > 0)
+                if (user._roles.length > 0)
                     json = [
                         ...json,
                         {
@@ -19,11 +30,11 @@ class userDB {
                             clientId: user.user.id,
                             roles: this.roles
                                 .filter((role) => {
-                                if (user.roles.includes(role.id))
+                                if (user._roles.includes(role.id))
                                     return role.name;
                             })
                                 .map((o) => o.name),
-                            user: user.roles,
+                            user: user._roles,
                         },
                     ];
             });
@@ -34,7 +45,6 @@ class userDB {
                     console.log(err);
                 else {
                     console.log(`----------\n this.users saved properly`);
-                    console.log(json);
                     if (next)
                         next(data);
                     this.temp = [];
@@ -57,62 +67,52 @@ class userDB {
             this.roles = [...this.roles, { id: role.id, name: role.name }];
         });
     }
-    readFile() {
-        const file = fs_1.default.readFileSync("./roles.json", "utf-8");
-        console.log(file.toString().length);
-        if (file.toString().length > 2) {
-            this.users = JSON.parse(file).users;
-        }
-        if (this.users.length > 0) {
-            this.roles = JSON.parse(file).roles;
-        }
-    }
     updateUserList(Client) {
-        this.readFile();
-        if (this.users.length <= 1)
-            this.makeUserList("sth", Client);
-        Client.guilds.cache.get(process.env.DISCORD_SERVER_ID).members.cache.forEach((user) => {
-            let found = false;
-            this.users.some((o) => {
-                if (o.clientId && o.clientId == user.user.id) {
-                    found = true;
-                    o.roles = this.roles
-                        .filter((role) => {
-                        if (user.roles.includes(role.id))
-                            return role.name;
-                    })
-                        .map((o) => o.name);
-                    return o;
-                }
-            });
-            if (!found) {
-                this.users = [
-                    ...this.users,
-                    {
-                        name: user.user.username,
-                        clientId: user.user.id,
-                        roles: this.roles
+        this.readFile(Client).then(() => {
+            Client.guilds.cache.get(process.env.DISCORD_SERVER_ID).members.cache.forEach((user) => {
+                let found = false;
+                this.users.some((o) => {
+                    if (o.clientId && o.clientId == user.user.id) {
+                        found = true;
+                        o.roles = this.roles
                             .filter((role) => {
-                            if (user.roles.includes(role.id))
+                            if (user._roles.includes(role.id))
                                 return role.name;
                         })
-                            .map((o) => o.name),
-                        user: user.roles,
-                    },
-                ];
-            }
-        });
-        const data = JSON.stringify({ users: this.users, roles: this.roles });
-        fs_1.default.writeFile("roles.json", data, (err) => {
-            if (err)
-                console.log(err);
-            else {
-                console.log(`----------\n this.users updated properly`);
-                this.users = [];
-                this.roles = [];
-            }
-        });
-        console.log(this.users, this.roles);
+                            .map((o) => o.name);
+                        return o;
+                    }
+                });
+                if (!found) {
+                    this.users = [
+                        ...this.users,
+                        {
+                            name: user.user.username,
+                            clientId: user.user.id,
+                            roles: this.roles
+                                .filter((role) => {
+                                if (user._roles.includes(role.id))
+                                    return role.name;
+                            })
+                                .map((o) => o.name),
+                            user: user._roles,
+                        },
+                    ];
+                }
+            });
+            const data = JSON.stringify({ users: this.users, roles: this.roles });
+            fs_1.default.writeFile("roles.json", data, (err) => {
+                if (err)
+                    console.log(err);
+                else {
+                    console.log(`----------\n this.users updated properly`);
+                    this.users = [];
+                    this.roles = [];
+                }
+            });
+            console.log(this.users, this.roles);
+        })
+            .catch(() => this.makeUserList('dsa', Client));
     }
 }
 exports.default = new userDB();
