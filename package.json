@@ -3,12 +3,19 @@
     "version": "0.0.0",
     "description": "simple bot which checks if user is streaming from twitch API",
     "main": "index.js",
+<<<<<<< HEAD
     "type": "module",
+=======
+>>>>>>> typescript
     "scripts": {
         "build": "babel src --out-dir build",
         "test": "echo \"Error: no test specified\" && exit 1",
         "babel": "babel-node src/index.js",
+<<<<<<< HEAD
         "start": "node src/index.js"
+=======
+        "start": "tsc && node out/index.js"
+>>>>>>> typescript
     },
     "repository": {
         "type": "git",
@@ -29,6 +36,11 @@
         "@babel/cli": "^7.13.0",
         "@babel/polyfill": "^7.12.1",
         "@babel/preset-env": "^7.13.9",
+<<<<<<< HEAD
+=======
+        "@types/express": "*",
+        "@types/node-fetch": "*",
+>>>>>>> typescript
         "discord.js": "^12.5.1",
         "dotenv": "^8.2.0",
         "express": "^4.17.1",
@@ -36,10 +48,19 @@
         "nodemon": "^2.0.7",
         "opusscript": "^0.0.8",
         "rimraf": "^3.0.2",
+<<<<<<< HEAD
+=======
+        "typescript": "*",
+>>>>>>> typescript
         "ytdl-core": "^4.5.0"
     },
     "devDependencies": {
         "@babel/core": "^7.13.8",
+<<<<<<< HEAD
         "@babel/node": "^7.13.0"
+=======
+        "@babel/node": "^7.13.0",
+        "@types/node": "*"
+>>>>>>> typescript
     }
 }
