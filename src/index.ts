@@ -81,7 +81,6 @@ Client.on("message", (message) => {
     const matches = [/kiedy/, /której/, /ktorej/, /kotrej/]
     matchArray(message.content, matches) && message.channel.send(`\`\`\`json${process.env.REMINDER_MESSAGE}\`\`\``);
 
-    if(message.content.includes('kiedy live'))
     if (message.channel.id == process.env.DISCORD_COMMAND_CHANNEL && message.content.includes("BOT")) {
         const regex = message.content.match(/BOT (.*)/)
         if (regex != null) {
