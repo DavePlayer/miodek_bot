@@ -10,6 +10,7 @@ import fs from "fs"
 import ytMeneger from "./ytMusic"
 import { user } from './interfaces'
 import Clock from './timer'
+import {Expression} from "typescript"
 
 dotenv.config()
 
@@ -53,7 +54,7 @@ app.post("/send", (req: express.Request, res: express.Response) => {
 Client.on("ready", async () => {
     try {
 
-        //Clock.addStaticReminder({time: new Date(2021, 3, 30, 20, 29, 0, 0), func: () => startTwitchCheck(Client) })
+        Clock.addStaticReminder({time: new Date(2021, 1, 1, 20, 0, 0, 0), func: () => startTwitchCheck(Client) })
         Clock.startClock()
         Client.user?.setPresence({
             status: "online", //You can show online, idle....
@@ -66,8 +67,21 @@ Client.on("ready", async () => {
         throw err
     }
 }) 
+
+function matchArray( message:string, matcher:Array<RegExp>):boolean {
+    return matcher.some( expr => {
+        if(message.match(expr) && message.includes('live')){
+            return true
+        }
+    } )
+}
+
 Client.on("message", (message) => {
     console.log(message.channel.id)
+    const matches = [/kiedy/, /której/, /ktorej/, /kotrej/]
+    matchArray(message.content, matches) && message.channel.send(`\`\`\`json${process.env.REMINDER_MESSAGE}\`\`\``);
+
+    if(message.content.includes('kiedy live'))
     if (message.channel.id == process.env.DISCORD_COMMAND_CHANNEL && message.content.includes("BOT")) {
         const regex = message.content.match(/BOT (.*)/)
         if (regex != null) {
