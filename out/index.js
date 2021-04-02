@@ -86,63 +86,63 @@ function matchArray(message, matcher) {
 exports.Client.on("message", (message) => {
     console.log(message.channel.id);
     const matches = [/kiedy/, /której/, /ktorej/, /kotrej/];
-    matchArray(message.content, matches) && message.channel.send(`\`\`\`json${process.env.REMINDER_MESSAGE}\`\`\``);
-    if (message.content.includes('kiedy live'))
-        if (message.channel.id == process.env.DISCORD_COMMAND_CHANNEL && message.content.includes("BOT")) {
-            const regex = message.content.match(/BOT (.*)/);
-            if (regex != null) {
-                const command = regex[1];
-                switch (true) {
-                    case command.includes("save users"):
-                        userList_1.default.makeUserList(message, exports.Client);
-                        break;
-                    case command.includes("punish"):
-                        const time = command.split(" ");
-                        //lastJudgment.punishByRole(Client, message, time[time.length - 1])
-                        rolePunichment_1.default.punishInit(exports.Client, message, time[time.length - 1]);
-                        timer_1.default.addDynamicReminder({ time: new Date(Date.now() + parseFloat(time[time.length - 1]) * 1000 * 60), func: () => console.log('punish that bitch') });
-                        break;
-                    case command.includes("play"):
-                        ytMusic_1.default.playMusic(message);
-                        break;
-                    case command.includes("skip"):
-                        ytMusic_1.default.skipSong(message);
-                        break;
-                    case command.includes("show list"):
-                        ytMusic_1.default.displayQuerry(message);
-                        break;
-                    case command.includes("fix connection"):
-                        ytMusic_1.default.fixConnection(message);
-                        break;
-                    case command.includes("help"):
-                        const embeded = new discord_js_1.default.MessageEmbed()
-                            .setColor("#0099ff")
-                            .setTitle("Command list")
-                            .setDescription("Wyświetlenie wszelkich komend jakie są w miodku")
-                            .addFields({
-                            name: "BOT save users",
-                            value: "Tworzy listę wszystkich ról użytkowników którzy je posiadają i zapisuje je na serwerze by potem bot mógł je dodać po tym jak osoba wyjdzie i wejdzie",
-                        }, {
-                            name: "BOT punish @user1 @user2 time",
-                            value: "dodaje rolę karną dla pingowanych użytkowników na określony czas",
-                        }, {
-                            name: "BOT play youtube_link/custom_words",
-                            value: "Dołącza do kanału na którym jest osoba która wpisała komendę i puszcza muzykę w czasie rzeczywistym. w przypadku odtwarzania już jakieś muzyki miodek tworzy listę i dodaję daną muzykę do kolejki by ją później puścić.",
-                        }, {
-                            name: "BOT skip",
-                            value: "W przypadku odtwarzania muzyki na kanale głosowym komenda pomiją odtwarzaną muzykę i w przypadku zaistnienia kolejnej w kolejce, puszcza ją",
-                        }, {
-                            name: "BOT show list",
-                            value: "Pokazuje listę piosenek które mają być puszczone na kanale głosowym.",
-                        }, {
-                            name: "BOT fix connection",
-                            value: "Ponieważ biblioteka discorda jest ułomna i nie umie poprawnie wykryć kiedy bot jest połączony z kanałem głosowym, komenda ta w przypadku zaistnienia błędu przebywania bota na innym kanale programowo wyrzuca bota z danego kanału i czyści kolejkę muzyk.",
-                        });
-                        message.channel.send(embeded);
-                        break;
-                }
+    if (matchArray(message.content, matches))
+        message.channel.send(`\`\`\`json${process.env.REMINDER_MESSAGE}\`\`\``);
+    if (message.channel.id == process.env.DISCORD_COMMAND_CHANNEL && message.content.includes("BOT")) {
+        const regex = message.content.match(/BOT (.*)/);
+        if (regex != null) {
+            const command = regex[1];
+            switch (true) {
+                case command.includes("save users"):
+                    userList_1.default.makeUserList(message, exports.Client);
+                    break;
+                case command.includes("punish"):
+                    const time = command.split(" ");
+                    //lastJudgment.punishByRole(Client, message, time[time.length - 1])
+                    rolePunichment_1.default.punishInit(exports.Client, message, time[time.length - 1]);
+                    timer_1.default.addDynamicReminder({ time: new Date(Date.now() + parseFloat(time[time.length - 1]) * 1000 * 60), func: () => console.log('punish that bitch') });
+                    break;
+                case command.includes("play"):
+                    ytMusic_1.default.playMusic(message);
+                    break;
+                case command.includes("skip"):
+                    ytMusic_1.default.skipSong(message);
+                    break;
+                case command.includes("show list"):
+                    ytMusic_1.default.displayQuerry(message);
+                    break;
+                case command.includes("fix connection"):
+                    ytMusic_1.default.fixConnection(message);
+                    break;
+                case command.includes("help"):
+                    const embeded = new discord_js_1.default.MessageEmbed()
+                        .setColor("#0099ff")
+                        .setTitle("Command list")
+                        .setDescription("Wyświetlenie wszelkich komend jakie są w miodku")
+                        .addFields({
+                        name: "BOT save users",
+                        value: "Tworzy listę wszystkich ról użytkowników którzy je posiadają i zapisuje je na serwerze by potem bot mógł je dodać po tym jak osoba wyjdzie i wejdzie",
+                    }, {
+                        name: "BOT punish @user1 @user2 time",
+                        value: "dodaje rolę karną dla pingowanych użytkowników na określony czas",
+                    }, {
+                        name: "BOT play youtube_link/custom_words",
+                        value: "Dołącza do kanału na którym jest osoba która wpisała komendę i puszcza muzykę w czasie rzeczywistym. w przypadku odtwarzania już jakieś muzyki miodek tworzy listę i dodaję daną muzykę do kolejki by ją później puścić.",
+                    }, {
+                        name: "BOT skip",
+                        value: "W przypadku odtwarzania muzyki na kanale głosowym komenda pomiją odtwarzaną muzykę i w przypadku zaistnienia kolejnej w kolejce, puszcza ją",
+                    }, {
+                        name: "BOT show list",
+                        value: "Pokazuje listę piosenek które mają być puszczone na kanale głosowym.",
+                    }, {
+                        name: "BOT fix connection",
+                        value: "Ponieważ biblioteka discorda jest ułomna i nie umie poprawnie wykryć kiedy bot jest połączony z kanałem głosowym, komenda ta w przypadku zaistnienia błędu przebywania bota na innym kanale programowo wyrzuca bota z danego kanału i czyści kolejkę muzyk.",
+                    });
+                    message.channel.send(embeded);
+                    break;
             }
         }
+    }
 });
 exports.Client.on("guildMemberUpdate", (member) => {
     // niby dziala na kazda zmiane roi, ale tez zmianie pseudonimu jak i usuniecie albo dodanie uzytkownika
