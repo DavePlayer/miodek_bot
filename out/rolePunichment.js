@@ -98,7 +98,6 @@ class lastJudgment {
     releaseDoomedFromFile(user, Client) {
         let savedRoles = JSON.parse(fs_1.default.readFileSync("./roles.json", "utf-8"));
         savedRoles.users.some((o) => {
-            //pod dawidem
             if (o.clientId == user.user.id) {
                 console.log(`zwalnianie użytkownika po pliku w którym istnieje`);
                 console.log("found doomed");
