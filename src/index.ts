@@ -2,13 +2,14 @@ import discord, {GuildMember, PartialGuildMember, RoleResolvable, TextChannel} f
 import express from "express"
 import "@babel/polyfill"
 import dotenv from "dotenv"
-import userDB from "./userList.js"
-import { startTwitchCheck } from "./startTwitchCheck.js"
-import { welcomeUser } from "./welcomeUser.js"
-import lastJudgment from "./rolePunichment.js"
+import userDB from "./userList"
+import { startTwitchCheck } from "./startTwitchCheck"
+import { welcomeUser } from "./welcomeUser"
+import lastJudgment from "./rolePunichment"
 import fs from "fs"
-import ytMeneger from "./ytMusic.js"
+import ytMeneger from "./ytMusic"
 import { user } from './interfaces'
+import Clock from './timer'
 
 dotenv.config()
 
@@ -50,8 +51,10 @@ app.post("/send", (req: express.Request, res: express.Response) => {
 })
 
 Client.on("ready", async () => {
-    startTwitchCheck(Client)
     try {
+
+        //Clock.addStaticReminder({time: new Date(2021, 3, 30, 20, 29, 0, 0), func: () => startTwitchCheck(Client) })
+        Clock.startClock()
         Client.user?.setPresence({
             status: "online", //You can show online, idle....
             activity: {
@@ -75,7 +78,9 @@ Client.on("message", (message) => {
                     break
                 case command.includes("punish"):
                     const time = command.split(" ")
-                    lastJudgment.punishByRole(Client, message.mentions.users, time[time.length - 1])
+                    //lastJudgment.punishByRole(Client, message, time[time.length - 1])
+                    lastJudgment.punishInit(Client, message, time[time.length -1])
+                    Clock.addDynamicReminder({time: new Date(Date.now() + parseFloat(time[time.length - 1]) * 1000 * 60), func: () => console.log('punish that bitch') })
                     break
                 case command.includes("play"):
                     ytMeneger.playMusic(message)
