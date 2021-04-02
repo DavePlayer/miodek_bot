@@ -2,6 +2,7 @@ import fs from "fs"
 import discord from 'discord.js'
 import userDB from "./userList"
 import { role, doomed, json, user } from './interfaces'
+import Clock from './timer'
 
 interface newGuildMember extends discord.GuildMember {
     _roles: Array<string>
@@ -149,7 +150,11 @@ class lastJudgment {
                     .then((afterAfterUser:any) => {
                         this.writeDownDoomed(userData)
                         message.channel.send(`${user.user.username} is abonished to the depths of hell 2.0 for ${parseFloat(time)} minutes`)
-                    setTimeout(() => this.releaseDoomed(afterAfterUser, Client), 1000 * parseInt(time))
+                        //setTimeout(() => this.releaseDoomed(afterAfterUser, Client), 1000 * parseInt(time))
+                        Clock.addDynamicReminder({
+                            time: new Date(new Date().getTime() + 1000 * 60 * parseInt(time)),
+                            func: () => this.releaseDoomed(afterAfterUser, Client)
+                        })
                     })
             } )
 

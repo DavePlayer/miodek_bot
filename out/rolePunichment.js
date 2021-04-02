@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const fs_1 = __importDefault(require("fs"));
 const userList_1 = __importDefault(require("./userList"));
+const timer_1 = __importDefault(require("./timer"));
 class lastJudgment {
     constructor() {
         this.doomed = [];
@@ -130,7 +131,11 @@ class lastJudgment {
                 .then((afterAfterUser) => {
                 this.writeDownDoomed(userData);
                 message.channel.send(`${user.user.username} is abonished to the depths of hell 2.0 for ${parseFloat(time)} minutes`);
-                setTimeout(() => this.releaseDoomed(afterAfterUser, Client), 1000 * parseInt(time));
+                //setTimeout(() => this.releaseDoomed(afterAfterUser, Client), 1000 * parseInt(time))
+                timer_1.default.addDynamicReminder({
+                    time: new Date(new Date().getTime() + 1000 * 60 * parseInt(time)),
+                    func: () => this.releaseDoomed(afterAfterUser, Client)
+                });
             });
         });
         //gonna be rewriten either way, so for now it's unnecessary
