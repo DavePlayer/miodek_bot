@@ -84,10 +84,11 @@ function matchArray(message, matcher) {
     });
 }
 exports.Client.on("message", (message) => {
-    console.log(message.channel.id);
+    //console.log(message.channel.id)
     const matches = [/kiedy/, /której/, /ktorej/, /kotrej/];
-    if (matchArray(message.content, matches))
+    if (matchArray(message.content, matches)) {
         message.channel.send(`\`\`\`json${process.env.REMINDER_MESSAGE}\`\`\``);
+    }
     if (message.channel.id == process.env.DISCORD_COMMAND_CHANNEL && message.content.includes("BOT")) {
         const regex = message.content.match(/BOT (.*)/);
         if (regex != null) {
