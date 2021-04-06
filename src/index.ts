@@ -10,7 +10,7 @@ import fs from "fs"
 import ytMeneger from "./ytMusic"
 import { user } from './interfaces'
 import Clock from './timer'
-import {Expression} from "typescript"
+import moment from 'moment'
 
 dotenv.config()
 
@@ -54,7 +54,8 @@ app.post("/send", (req: express.Request, res: express.Response) => {
 Client.on("ready", async () => {
     try {
 
-        Clock.addStaticReminder({time: new Date(2021, 1, 1, 20, 0, 0, 0), func: () => startTwitchCheck(Client) })
+        //Clock.addStaticReminder({time: new Date(2021, 3, 30, 20, 29, 0, 0), func: () => startTwitchCheck(Client) })
+        Clock.addStaticReminder({time: moment('2021-04-06T19:00:00.000'), func: () => startTwitchCheck(Client) })
         Clock.startClock()
         Client.user?.setPresence({
             status: "online", //You can show online, idle....
@@ -94,7 +95,7 @@ Client.on("message", (message) => {
                     const time = command.split(" ")
                     //lastJudgment.punishByRole(Client, message, time[time.length - 1])
                     lastJudgment.punishInit(Client, message, time[time.length -1])
-                    Clock.addDynamicReminder({time: new Date(Date.now() + parseFloat(time[time.length - 1]) * 1000 * 60), func: () => console.log('punish that bitch') })
+                    //Clock.addDynamicReminder({time: new Date(Date.now() + parseFloat(time[time.length - 1]) * 1000 * 60), func: () => console.log('punish that bitch') })
                     break
                 case command.includes("play"):
                     ytMeneger.playMusic(message)
@@ -120,8 +121,8 @@ Client.on("message", (message) => {
                                     "Tworzy listę wszystkich ról użytkowników którzy je posiadają i zapisuje je na serwerze by potem bot mógł je dodać po tym jak osoba wyjdzie i wejdzie",
                             },
                             {
-                                name: "BOT punish @user1 @user2 time",
-                                value: "dodaje rolę karną dla pingowanych użytkowników na określony czas",
+                                name: "BOT punish @user1 @user2 time+format",
+                                value: "dodaje rolę karną dla pingowanych użytkowników na określony czas\n formaty:\n y- lata\n M-miesiąc\nw-tygodnie\nd-dni\nh-godziny\nm-minuty\ns-sekundy\npolecane jest dawanie kar na więcej niż 2 minuty ze względu na timer który sprawdza czas co mitutę, więc dawanie na mniej spowoduje ukaranie użytkownika na zawsze",
                             },
                             {
                                 name: "BOT play youtube_link/custom_words",

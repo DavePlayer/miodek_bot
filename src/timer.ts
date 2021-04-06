@@ -1,52 +1,51 @@
 import discord from 'discord.js'
 import {clockExecutable} from './interfaces'
+import moment, {Moment} from 'moment'
 
 
 class Clock {
     staticFuns: Array<clockExecutable>
     dynamicFuns: Array<clockExecutable>
-    currentTime: Date
+    currentTime: Moment
 
     
     constructor() {
-        this.currentTime = new Date(Date.now())
+        this.currentTime = moment()
         this.staticFuns = []
         this.dynamicFuns = []
     }
 
     addStaticReminder(executable:clockExecutable) {
-        console.log('added static executable function')
-        executable.time.setSeconds(0, 0)
+        console.log('added static executable function:', executable.time.toString())
         this.staticFuns = [...this.staticFuns, executable]
     }
 
     addDynamicReminder(executable:clockExecutable) {
         console.log('added dynamic executable function')
-        executable.time.setSeconds(0, 0)
-        this.staticFuns = [...this.staticFuns, executable]
+        this.dynamicFuns = [...this.dynamicFuns, executable]
     }
 
     startClock() {
         setInterval(async () => {
-            this.currentTime = new Date(Date.now())
-            this.currentTime.setSeconds(0, 0)
+            this.currentTime = moment()
+            console.log(this.currentTime.toString())
 
             this.staticFuns.map( (exec:clockExecutable) => {
                 if(
-                    this.currentTime.getHours() == exec.time.getHours() &&
-                    this.currentTime.getMinutes() == exec.time.getMinutes()){
+                    this.currentTime.hour() == exec.time.hour() &&
+                    this.currentTime.minute() == exec.time.minute()){
                         exec.func()
                     }
             } )
 
             this.dynamicFuns.filter( (exec:clockExecutable) => {
-                if(this.currentTime == exec.time) {
+                this.currentTime.seconds(0).milliseconds(0)
+                exec.time.seconds(0).milliseconds(0)
+                if(this.currentTime.valueOf() == exec.time.valueOf()) {
                     exec.func()
                     return false
                 } else return true
             } )
-            
-            console.log(this.currentTime)
         }, 60000)
     }
 }

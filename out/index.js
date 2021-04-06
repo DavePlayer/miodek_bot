@@ -24,6 +24,7 @@ const rolePunichment_1 = __importDefault(require("./rolePunichment"));
 const fs_1 = __importDefault(require("fs"));
 const ytMusic_1 = __importDefault(require("./ytMusic"));
 const timer_1 = __importDefault(require("./timer"));
+const moment_1 = __importDefault(require("moment"));
 dotenv_1.default.config();
 exports.Client = new discord_js_1.default.Client();
 ytMusic_1.default.setClient(exports.Client);
@@ -62,7 +63,8 @@ app.post("/send", (req, res) => {
 exports.Client.on("ready", () => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {
-        timer_1.default.addStaticReminder({ time: new Date(2021, 1, 1, 20, 0, 0, 0), func: () => startTwitchCheck_1.startTwitchCheck(exports.Client) });
+        //Clock.addStaticReminder({time: new Date(2021, 3, 30, 20, 29, 0, 0), func: () => startTwitchCheck(Client) })
+        timer_1.default.addStaticReminder({ time: moment_1.default('2021-04-06T19:00:00.000'), func: () => startTwitchCheck_1.startTwitchCheck(exports.Client) });
         timer_1.default.startClock();
         (_a = exports.Client.user) === null || _a === void 0 ? void 0 : _a.setPresence({
             status: "online",
@@ -86,10 +88,10 @@ function matchArray(message, matcher) {
 exports.Client.on("message", (message) => {
     //console.log(message.channel.id)
     const matches = [/kiedy/, /której/, /ktorej/, /kotrej/];
-    if (matchArray(message.content, matches)) {
-        message.channel.send(`\`\`\`json${process.env.REMINDER_MESSAGE}\`\`\``);
-    }
     if (message.channel.id == process.env.DISCORD_COMMAND_CHANNEL && message.content.includes("BOT")) {
+        if (matchArray(message.content, matches)) {
+            message.channel.send(`\`\`\`json${process.env.REMINDER_MESSAGE}\`\`\``);
+        }
         const regex = message.content.match(/BOT (.*)/);
         if (regex != null) {
             const command = regex[1];
@@ -101,7 +103,7 @@ exports.Client.on("message", (message) => {
                     const time = command.split(" ");
                     //lastJudgment.punishByRole(Client, message, time[time.length - 1])
                     rolePunichment_1.default.punishInit(exports.Client, message, time[time.length - 1]);
-                    timer_1.default.addDynamicReminder({ time: new Date(Date.now() + parseFloat(time[time.length - 1]) * 1000 * 60), func: () => console.log('punish that bitch') });
+                    //Clock.addDynamicReminder({time: new Date(Date.now() + parseFloat(time[time.length - 1]) * 1000 * 60), func: () => console.log('punish that bitch') })
                     break;
                 case command.includes("play"):
                     ytMusic_1.default.playMusic(message);
@@ -124,8 +126,8 @@ exports.Client.on("message", (message) => {
                         name: "BOT save users",
                         value: "Tworzy listę wszystkich ról użytkowników którzy je posiadają i zapisuje je na serwerze by potem bot mógł je dodać po tym jak osoba wyjdzie i wejdzie",
                     }, {
-                        name: "BOT punish @user1 @user2 time",
-                        value: "dodaje rolę karną dla pingowanych użytkowników na określony czas",
+                        name: "BOT punish @user1 @user2 time+format",
+                        value: "dodaje rolę karną dla pingowanych użytkowników na określony czas\n formaty:\n y- lata\n M-miesiąc\nw-tygodnie\nd-dni\nh-godziny\nm-minuty\ns-sekundy\npolecane jest dawanie kar na więcej niż 2 minuty ze względu na timer który sprawdza czas co mitutę, więc dawanie na mniej spowoduje ukaranie użytkownika na zawsze",
                     }, {
                         name: "BOT play youtube_link/custom_words",
                         value: "Dołącza do kanału na którym jest osoba która wpisała komendę i puszcza muzykę w czasie rzeczywistym. w przypadku odtwarzania już jakieś muzyki miodek tworzy listę i dodaję daną muzykę do kolejki by ją później puścić.",

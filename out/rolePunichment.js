@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const fs_1 = __importDefault(require("fs"));
 const userList_1 = __importDefault(require("./userList"));
 const timer_1 = __importDefault(require("./timer"));
+const moment_1 = __importDefault(require("moment"));
 class lastJudgment {
     constructor() {
         this.doomed = [];
@@ -52,7 +53,12 @@ class lastJudgment {
                     message.channel.send(`${this.user.user.username} już nie żyż`);
                     return this.user;
                 }
-                this.punishByRole(Client, message, time, this.user);
+                else if (isNaN(parseInt(time.slice(0, -1))) == false && typeof time[time.length - 1] == 'string') {
+                    this.punishByRole(Client, message, time, this.user);
+                }
+                else {
+                    message.reply('invalid time');
+                }
             }
         });
     }
@@ -130,10 +136,13 @@ class lastJudgment {
                 .add(lateruser.guild.roles.cache.find((r) => r.name == process.env.PUNISHMENT_ROLE && r))
                 .then((afterAfterUser) => {
                 this.writeDownDoomed(userData);
-                message.channel.send(`${user.user.username} is abonished to the depths of hell 2.0 for ${parseFloat(time)} minutes`);
+                const type = time.slice(-1);
+                const timeNum = parseInt(time.slice(0, -1));
+                const releasement = moment_1.default().add(timeNum, `${type}`);
+                message.channel.send(`${user.user.username} is abonished to the depths of hell 2.0. Person shall be released: \`${releasement.date()}-${releasement.month() + 1}-${releasement.year()} at ${releasement.hour()}:${releasement.minutes()}:${releasement.seconds()}\``);
                 //setTimeout(() => this.releaseDoomed(afterAfterUser, Client), 1000 * parseInt(time))
                 timer_1.default.addDynamicReminder({
-                    time: new Date(new Date().getTime() + 1000 * 60 * parseInt(time)),
+                    time: releasement,
                     func: () => this.releaseDoomed(afterAfterUser, Client)
                 });
             });

@@ -8,42 +8,45 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
+const moment_1 = __importDefault(require("moment"));
 class Clock {
     constructor() {
-        this.currentTime = new Date(Date.now());
+        this.currentTime = moment_1.default();
         this.staticFuns = [];
         this.dynamicFuns = [];
     }
     addStaticReminder(executable) {
-        console.log('added static executable function');
-        executable.time.setSeconds(0, 0);
+        console.log('added static executable function:', executable.time.toString());
         this.staticFuns = [...this.staticFuns, executable];
     }
     addDynamicReminder(executable) {
         console.log('added dynamic executable function');
-        executable.time.setSeconds(0, 0);
-        this.staticFuns = [...this.staticFuns, executable];
+        this.dynamicFuns = [...this.dynamicFuns, executable];
     }
     startClock() {
         setInterval(() => __awaiter(this, void 0, void 0, function* () {
-            this.currentTime = new Date(Date.now());
-            this.currentTime.setSeconds(0, 0);
+            this.currentTime = moment_1.default();
+            console.log(this.currentTime.toString());
             this.staticFuns.map((exec) => {
-                if (this.currentTime.getHours() == exec.time.getHours() &&
-                    this.currentTime.getMinutes() == exec.time.getMinutes()) {
+                if (this.currentTime.hour() == exec.time.hour() &&
+                    this.currentTime.minute() == exec.time.minute()) {
                     exec.func();
                 }
             });
             this.dynamicFuns.filter((exec) => {
-                if (this.currentTime == exec.time) {
+                this.currentTime.seconds(0).milliseconds(0);
+                exec.time.seconds(0).milliseconds(0);
+                if (this.currentTime.valueOf() == exec.time.valueOf()) {
                     exec.func();
                     return false;
                 }
                 else
                     return true;
             });
-            console.log(this.currentTime);
         }), 60000);
     }
 }

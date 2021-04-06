@@ -1,3 +1,4 @@
+import {Moment} from 'moment'
 
 interface user {
     name: string,
@@ -17,7 +18,7 @@ interface json {
 }
 
 interface clockExecutable {
-    time: Date,
+    time: Moment,
     func: Function
 }
 
