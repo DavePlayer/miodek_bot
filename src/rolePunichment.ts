@@ -3,6 +3,7 @@ import discord from 'discord.js'
 import userDB from "./userList"
 import { role, doomed, json, user } from './interfaces'
 import Clock from './timer'
+import moment, {Moment, unitOfTime} from 'moment'
 
 interface newGuildMember extends discord.GuildMember {
     _roles: Array<string>
@@ -59,8 +60,11 @@ class lastJudgment {
                     console.log(`${this.user.user.username} już nie żyż`)
                     message.channel.send(`${this.user.user.username} już nie żyż`)
                     return this.user
+                } else if( isNaN(parseInt(time.slice(0, -1))) == false && typeof time[time.length -1] == 'string' ) {
+                    this.punishByRole(Client, message, time, this.user)
+                } else {
+                    message.reply('invalid time')
                 }
-                this.punishByRole(Client, message, time, this.user)
             }
         })
     }
@@ -149,10 +153,13 @@ class lastJudgment {
                     .add(lateruser.guild.roles.cache.find((r: discord.Role) => r.name == process.env.PUNISHMENT_ROLE && r))
                     .then((afterAfterUser:any) => {
                         this.writeDownDoomed(userData)
-                        message.channel.send(`${user.user.username} is abonished to the depths of hell 2.0 for ${parseFloat(time)} minutes`)
+                        const type:string = time.slice(-1)
+                        const timeNum:number = parseInt(time.slice(0, -1))
+                        const releasement:Moment = moment().add(timeNum, `${type}` as unitOfTime.DurationConstructor)
+                        message.channel.send(`${user.user.username} is abonished to the depths of hell 2.0. Person shall be released: \`${releasement.date()}-${releasement.month()+1}-${releasement.year()} at ${releasement.hour()}:${releasement.minutes()}:${releasement.seconds()}\``)
                         //setTimeout(() => this.releaseDoomed(afterAfterUser, Client), 1000 * parseInt(time))
                         Clock.addDynamicReminder({
-                            time: new Date(new Date().getTime() + 1000 * 60 * parseInt(time)),
+                            time: releasement,
                             func: () => this.releaseDoomed(afterAfterUser, Client)
                         })
                     })
