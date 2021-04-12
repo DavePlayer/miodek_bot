@@ -80,10 +80,12 @@ function matchArray( message:string, matcher:Array<RegExp>):boolean {
 Client.on("message", (message) => {
     //console.log(message.channel.id)
     const matches = [/kiedy/, /której/, /ktorej/, /kotrej/]
+    if(matchArray(message.content, matches) && message.guild.id == process.env.DISCORD_SERVER_ID){
+        console.log(matchArray(message.content, matches))
+        console.log('kieyd live message send')
+        message.channel.send(`\`\`\`json${process.env.REMINDER_MESSAGE}\`\`\``);
+    } 
     if (message.channel.id == process.env.DISCORD_COMMAND_CHANNEL && message.content.includes("BOT")) {
-        if(matchArray(message.content, matches)){
-            message.channel.send(`\`\`\`json${process.env.REMINDER_MESSAGE}\`\`\``);
-        } 
         const regex = message.content.match(/BOT (.*)/)
         if (regex != null) {
             const command = regex[1]
