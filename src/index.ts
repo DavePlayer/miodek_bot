@@ -167,7 +167,15 @@ Client.on("guildMemberAdd", (member: GuildMember | PartialGuildMember) => {
     getFileJson().users.map((o: user) => {
         if (typeof o.clientId != "undefined" && o.clientId)
             if (o.clientId == member.user?.id) {
-                o.roles.map((role: string) => member.roles.add(member.guild.roles.cache.find((r: discord.Role) => r.name == role) as RoleResolvable))
+                o.roles.map((role: string) => {
+                    const roleObj:discord.Role = member.guild.roles.cache.find((r: discord.Role) => r.name == role)
+                    if(!member.manageable || !roleObj.editable){
+                        console.log(`cannot manipulate role assigned for ${member.user.username}\n Here's his saved role: ${role}`);
+                        (Client.channels.cache.get(process.env.DISCORD_COMMAND_CHANNEL) as TextChannel).send(`Cannot add role ${role} to user: ${member.user.username}`)
+                    } else {
+                        member.roles.add(roleObj)
+                    }
+                })
             }
     })
 })

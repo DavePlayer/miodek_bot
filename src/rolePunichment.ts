@@ -49,6 +49,16 @@ class lastJudgment {
         fs.writeFileSync("./punishedUsers.json", JSON.stringify(this.doomed))
     }
 
+    checkRolesModyfication(roles: Array<string>, guild: discord.Guild): boolean {
+        return roles.some( role => {
+            const roleObj:discord.Role = guild.roles.cache.find( (r: discord.Role) => r.id == role)
+            console.log(roleObj.editable)
+            if(roleObj.editable == false){
+                return true
+            } 
+        })
+    }
+
     punishInit(Client: discord.Client, message: discord.Message, time: string) {
         const users = message.mentions.users
         this.readDoomed(Client)
@@ -61,7 +71,10 @@ class lastJudgment {
                     message.channel.send(`${this.user.user.username} już nie żyż`)
                     return this.user
                 } else if( isNaN(parseInt(time.slice(0, -1))) == false && typeof time[time.length -1] == 'string' ) {
-                    this.punishByRole(Client, message, time, this.user)
+                    if(this.checkRolesModyfication(this.user._roles, Client.guilds.cache.get(process.env.DISCORD_SERVER_ID))){
+                        message.channel.send(`Cannot manipulate ${member.user.username} role`)
+                        return false
+                    } else this.punishByRole(Client, message, time, this.user)
                 } else {
                     message.reply('invalid time')
                 }
