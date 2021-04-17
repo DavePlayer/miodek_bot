@@ -111,6 +111,18 @@ Client.on("message", (message) => {
                 case command.includes("fix connection"):
                     ytMeneger.fixConnection(message)
                     break
+                case command.includes("slavery mode"):
+                    if(message.guild.me.hasPermission('MANAGE_NICKNAMES') == false)
+                    return message.channel.send('brak uprawnień do zmiany nicków')
+                    message.guild.members.fetch(message.guild.ownerID)
+                    .then (owner => {
+                            Client.guilds.cache.get(process.env.DISCORD_SERVER_ID).members.cache.forEach((member: discord.GuildMember, key:string) => {
+                            if(!member.roles.cache.find(r => r.name == process.env.SPECIALROLE) && member.roles.highest.position < message.guild.me.roles.highest.position && member.id != owner.id) {
+                                member.setNickname(`niewolnik ${key}`)
+                            }
+                        })
+                    })
+                    break
                 case command.includes("help"):
                     const embeded = new discord.MessageEmbed()
                         .setColor("#0099ff")
