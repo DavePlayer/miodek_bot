@@ -112,15 +112,20 @@ Client.on("message", (message) => {
                     ytMeneger.fixConnection(message)
                     break
                 case command.includes("slavery mode"):
+                    let userChanged:number = 0;
                     if(message.guild.me.hasPermission('MANAGE_NICKNAMES') == false)
-                    return message.channel.send('brak uprawnień do zmiany nicków')
-                    message.guild.members.fetch(message.guild.ownerID)
-                    .then (owner => {
-                            Client.guilds.cache.get(process.env.DISCORD_SERVER_ID).members.cache.forEach((member: discord.GuildMember, key:string) => {
-                            if(!member.roles.cache.find(r => r.name == process.env.SPECIALROLE) && member.roles.highest.position < message.guild.me.roles.highest.position && member.id != owner.id) {
+                        return message.channel.send('brak uprawnień do zmiany nicków')
+                    message.guild.members.fetch()
+                    .then (members => {
+                            members.forEach((member: discord.GuildMember, key:string) => {
+                            if(!member.roles.cache.find(r => r.name == process.env.SPECIALROLE) && member.roles.highest.position < message.guild.me.roles.highest.position && member.id != process.env.OWNER_ID) {
+                                userChanged += 1
                                 member.setNickname(`niewolnik ${key}`)
                             }
                         })
+                    })
+                    .finally(() => {
+                        message.channel.send(`changed ${userChanged} user nicknames`)
                     })
                     break
                 case command.includes("help"):
