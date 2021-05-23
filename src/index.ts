@@ -135,6 +135,39 @@ Client.on("message", (message) => {
                     const serverId: string = command.split(" ")[2];
                     cloneServer(serverId, message, Client);
                     break;
+                case command.includes("clear server"):
+                    const givenServerId: string = command.split(" ")[2];
+                    Client.guilds.fetch(givenServerId).then((targetGuild: discord.Guild) => {
+                        const deletingChanelsPromise = targetGuild.channels.cache.map((channel) =>
+                            channel
+                                .delete()
+                                .then((afterChannel) => console.log(`deleted ${afterChannel.id} channel`))
+                                .catch((err) => console.log(err))
+                        );
+
+                        const deletingrolesPromise = targetGuild.roles.cache.map(async (role) => {
+                            console.log(process.env.BOT_NAME, role.name);
+                            return (
+                                role.name != process.env.BOT_NAME &&
+                                role.name != "@everyone" &&
+                                role
+                                    .delete()
+                                    .then((afterRole) => console.log(`deleted ${afterRole.name} role`))
+                                    .catch((err) => console.log(err))
+                            );
+                        });
+
+                        Promise.all(deletingChanelsPromise)
+                            .then(() => {
+                                console.log(`deleted all channels`);
+                            })
+                            .catch((err) => console.log(err));
+                        Promise.all(deletingrolesPromise)
+                            .then(() => console.log("deleted all roles"))
+
+                            .catch((err) => console.log(err));
+                    });
+                    break;
                 case command.includes("help"):
                     const embeded = new discord.MessageEmbed().setColor("#0099ff").setTitle("Command list").setDescription("Wyświetlenie wszelkich komend jakie są w miodku").addFields(
                         {
