@@ -1,30 +1,30 @@
-import discord, {GuildMember, PartialGuildMember, RoleResolvable, TextChannel} from "discord.js"
-import express from "express"
-import "@babel/polyfill"
-import dotenv from "dotenv"
-import userDB from "./userList"
-import { startTwitchCheck } from "./startTwitchCheck"
-import { welcomeUser } from "./welcomeUser"
-import lastJudgment from "./rolePunichment"
-import fs from "fs"
-import ytMeneger from "./ytMusic"
-import { user } from './interfaces'
-import Clock from './timer'
-import moment from 'moment'
+import discord, { GuildMember, PartialGuildMember, TextChannel } from "discord.js";
+import express from "express";
+import "@babel/polyfill";
+import dotenv from "dotenv";
+import userDB from "./userList";
+import { startTwitchCheck } from "./startTwitchCheck";
+import { welcomeUser } from "./welcomeUser";
+import lastJudgment from "./rolePunichment";
+import fs from "fs";
+import ytMeneger from "./ytMusic";
+import { user } from "./interfaces";
+import Clock from "./timer";
+import moment from "moment";
 
-dotenv.config()
+dotenv.config();
 
-export const Client = new discord.Client()
-ytMeneger.setClient(Client)
-const app: express.Application = express()
-app.use(express.json())
+export const Client = new discord.Client();
+ytMeneger.setClient(Client);
+const app: express.Application = express();
+app.use(express.json());
 
 const getFileJson = () => {
-    return JSON.parse(fs.readFileSync("./roles.json", "utf-8"))
-}
+    return JSON.parse(fs.readFileSync("./roles.json", "utf-8"));
+};
 
 app.post("/send", (req: express.Request, res: express.Response) => {
-    console.log(req.body)
+    console.log(req.body);
     // http post body structure
     //{
     //"type": "sendMessage",
@@ -35,149 +35,202 @@ app.post("/send", (req: express.Request, res: express.Response) => {
     if (req.body.type == "sendMessage" && req.body.channel.length > 0 && req.body.channelId) {
         switch (req.body.channel) {
             case "bot":
-                (Client.channels.cache.get(process!.env!.DISCORD_COMMAND_CHANNEL || '') as TextChannel).send(req.body.message)
-                break
+                (Client.channels.cache.get(process!.env!.DISCORD_COMMAND_CHANNEL || "") as TextChannel).send(req.body.message);
+                break;
             case "info-social":
-                (Client.channels.cache.get(process.env.DISCORD_CHANNEL || '') as TextChannel).send(req.body.message)
-                break
+                (Client.channels.cache.get(process.env.DISCORD_CHANNEL || "") as TextChannel).send(req.body.message);
+                break;
             case "ogolny":
-                (Client.channels.cache.get(process.env.DISCORD_MAIN_CHANNEL || '') as TextChannel).send(req.body.message)
-                break
+                (Client.channels.cache.get(process.env.DISCORD_MAIN_CHANNEL || "") as TextChannel).send(req.body.message);
+                break;
             default:
-                (Client.channels.cache.get(req.body.channelId) as TextChannel).send(req.body.message)
-                break
+                (Client.channels.cache.get(req.body.channelId) as TextChannel).send(req.body.message);
+                break;
         }
     }
-    res.send({ stsus: "working" })
-})
+    res.send({ stsus: "working" });
+});
 
 Client.on("ready", async () => {
     try {
-
         //Clock.addStaticReminder({time: new Date(2021, 3, 30, 20, 29, 0, 0), func: () => startTwitchCheck(Client) })
-        Clock.addStaticReminder({time: moment('2021-04-06T19:00:00.000'), func: () => startTwitchCheck(Client) })
-        Clock.startClock()
+        Clock.addStaticReminder({
+            time: moment("2021-04-06T19:00:00.000"),
+            func: () => startTwitchCheck(Client),
+        });
+        Clock.startClock();
         Client.user?.setPresence({
             status: "online", //You can show online, idle....
             activity: {
                 name: process.env.STATUS, //The message shown
                 type: "PLAYING", //PLAYING: WATCHING: LISTENING: STREAMING:
             },
-        })
+        });
     } catch (err) {
-        throw err
+        throw err;
     }
-}) 
+});
 
-function matchArray( message:string, matcher:Array<RegExp>):boolean {
-    return matcher.some( expr => {
-        if(message.match(expr) && message.includes('live')){
-            return true
+function matchArray(message: string, matcher: Array<RegExp>): boolean {
+    return matcher.some((expr) => {
+        if (message.match(expr) && message.includes("live")) {
+            return true;
         }
-    } )
+    });
 }
 
 Client.on("message", (message) => {
     //console.log(message.channel.id)
-    const matches = [/kiedy/, /której/, /ktorej/, /kotrej/]
-    if(matchArray(message.content, matches) && message.guild.id == process.env.DISCORD_SERVER_ID){
-        console.log(matchArray(message.content, matches))
-        console.log('kieyd live message send')
+    const matches = [/kiedy/, /której/, /ktorej/, /kotrej/];
+    if (matchArray(message.content, matches) && message.guild.id == process.env.DISCORD_SERVER_ID) {
+        console.log(matchArray(message.content, matches));
+        console.log("kieyd live message send");
         message.channel.send(`\`\`\`json${process.env.REMINDER_MESSAGE}\`\`\``);
-    } 
+    }
     if (message.channel.id == process.env.DISCORD_COMMAND_CHANNEL && message.content.includes("BOT")) {
-        const regex = message.content.match(/BOT (.*)/)
+        const regex = message.content.match(/BOT (.*)/);
         if (regex != null) {
-            const command = regex[1]
+            const command = regex[1];
             switch (true) {
                 case command.includes("save users"):
-                    userDB.makeUserList(message, Client)
-                    break
+                    userDB.makeUserList(message, Client);
+                    break;
                 case command.includes("punish"):
-                    const time = command.split(" ")
+                    const time = command.split(" ");
                     //lastJudgment.punishByRole(Client, message, time[time.length - 1])
-                    lastJudgment.punishInit(Client, message, time[time.length -1])
+                    lastJudgment.punishInit(Client, message, time[time.length - 1]);
                     //Clock.addDynamicReminder({time: new Date(Date.now() + parseFloat(time[time.length - 1]) * 1000 * 60), func: () => console.log('punish that bitch') })
-                    break
+                    break;
                 case command.includes("play"):
-                    ytMeneger.playMusic(message)
-                    break
+                    ytMeneger.playMusic(message);
+                    break;
                 case command.includes("skip"):
-                    ytMeneger.skipSong(message)
-                    break
+                    ytMeneger.skipSong(message);
+                    break;
                 case command.includes("show list"):
-                    ytMeneger.displayQuerry(message)
-                    break
+                    ytMeneger.displayQuerry(message);
+                    break;
                 case command.includes("fix connection"):
-                    ytMeneger.fixConnection(message)
-                    break
+                    ytMeneger.fixConnection(message);
+                    break;
                 case command.includes("slavery mode"):
-                    let userChanged:number = 0;
-                    if(message.guild.me.hasPermission('MANAGE_NICKNAMES') == false)
-                        return message.channel.send('brak uprawnień do zmiany nicków')
-                    message.guild.members.fetch()
-                    .then (members => {
-                            members.forEach((member: discord.GuildMember, key:string) => {
-                            if(!member.roles.cache.find(r => r.name == process.env.SPECIALROLE) && member.roles.highest.position < message.guild.me.roles.highest.position && member.id != process.env.OWNER_ID) {
-                                userChanged += 1
-                                member.setNickname(`niewolnik ${key}`)
-                            }
+                    let userChanged: number = 0;
+                    if (message.guild.me.hasPermission("MANAGE_NICKNAMES") == false) return message.channel.send("brak uprawnień do zmiany nicków");
+                    message.guild.members
+                        .fetch()
+                        .then((members) => {
+                            members.forEach((member: discord.GuildMember, key: string) => {
+                                if (!member.roles.cache.find((r) => r.name == process.env.SPECIALROLE) && member.roles.highest.position < message.guild.me.roles.highest.position && member.id != process.env.OWNER_ID) {
+                                    userChanged += 1;
+                                    member.setNickname(`niewolnik ${key}`);
+                                }
+                            });
                         })
-                    })
-                    .finally(() => {
-                        message.channel.send(`changed ${userChanged} user nicknames`)
-                    })
-                    break
+                        .finally(() => {
+                            message.channel.send(`changed ${userChanged} user nicknames`);
+                        });
+                    break;
+                case command.includes("clone server"):
+                    const serverId: string = command.split(" ")[2];
+                    Client.guilds
+                        .fetch(serverId)
+                        .then((targetGuild: discord.Guild) => {
+                            // targetGuild.channels.cache.clone()A
+
+                            // roles cloning
+                            const rolesClone = message.guild.roles.cache.clone();
+
+                            rolesClone.map((role) => {
+                                console.log(role.name);
+                                if (!targetGuild.roles.cache.find((rl) => rl.name.toLowerCase() == role.name.toLowerCase()))
+                                    targetGuild.roles.create({
+                                        data: role,
+                                    });
+                            });
+
+                            // cahnnels cloning
+                            const channelsClone = message.guild.channels.cache.clone();
+                            // first categories
+                            const categoryPromises = channelsClone.map(async (channel) => {
+                                if (!targetGuild.channels.cache.find((ch) => ch.name.toLowerCase() == channel.name.toLowerCase()) && channel.type == "category") {
+                                    return targetGuild.channels
+                                        .create(channel.name, {
+                                            permissionOverwrites: channel.permissionOverwrites,
+                                            type: channel.type,
+                                            position: channel.position,
+                                        })
+                                        .then((afterChannel) => console.log(`created category channel: ${afterChannel.name}`));
+                                }
+                            });
+                            Promise.all(categoryPromises).then(() => {
+                                channelsClone.map((channel) => {
+                                    console.log(channel.name);
+                                    let parent: any = null;
+                                    if (channel.type != "category") {
+                                        parent = targetGuild.channels.cache.filter((cat) => cat.name == channel.parent.name);
+                                        parent = Array.from(parent.keys());
+                                        //parent = targetGuild.channels.cache.get(parent[0]);
+                                        parent = targetGuild.channels.cache.get(parent[0]);
+                                    }
+                                    console.log(channel.name, parent);
+                                    if (!targetGuild.channels.cache.find((ch) => ch.name.toLowerCase() == channel.name.toLowerCase()) && channel.type != "category") {
+                                        targetGuild.channels
+                                            .create(channel.name, {
+                                                permissionOverwrites: channel.permissionOverwrites,
+                                                type: channel.type,
+                                                position: channel.position,
+                                            })
+                                            .then((afterChannel) => {
+                                                if (afterChannel.type != "category") afterChannel.setParent(parent as discord.CategoryChannel);
+                                            });
+                                    }
+                                });
+                            });
+                        })
+                        .catch((err) => console.log(err));
+                    break;
                 case command.includes("help"):
-                    const embeded = new discord.MessageEmbed()
-                        .setColor("#0099ff")
-                        .setTitle("Command list")
-                        .setDescription("Wyświetlenie wszelkich komend jakie są w miodku")
-                        .addFields(
-                            {
-                                name: "BOT save users",
-                                value:
-                                    "Tworzy listę wszystkich ról użytkowników którzy je posiadają i zapisuje je na serwerze by potem bot mógł je dodać po tym jak osoba wyjdzie i wejdzie",
-                            },
-                            {
-                                name: "BOT punish @user1 @user2 time+format",
-                                value: "dodaje rolę karną dla pingowanych użytkowników na określony czas\n formaty:\n y- lata\n M-miesiąc\nw-tygodnie\nd-dni\nh-godziny\nm-minuty\ns-sekundy\npolecane jest dawanie kar na więcej niż 2 minuty ze względu na timer który sprawdza czas co mitutę, więc dawanie na mniej spowoduje ukaranie użytkownika na zawsze",
-                            },
-                            {
-                                name: "BOT play youtube_link/custom_words",
-                                value:
-                                    "Dołącza do kanału na którym jest osoba która wpisała komendę i puszcza muzykę w czasie rzeczywistym. w przypadku odtwarzania już jakieś muzyki miodek tworzy listę i dodaję daną muzykę do kolejki by ją później puścić.",
-                            },
-                            {
-                                name: "BOT skip",
-                                value:
-                                    "W przypadku odtwarzania muzyki na kanale głosowym komenda pomiją odtwarzaną muzykę i w przypadku zaistnienia kolejnej w kolejce, puszcza ją",
-                            },
-                            {
-                                name: "BOT show list",
-                                value: "Pokazuje listę piosenek które mają być puszczone na kanale głosowym.",
-                            },
-                            {
-                                name: "BOT fix connection",
-                                value:
-                                    "Ponieważ biblioteka discorda jest ułomna i nie umie poprawnie wykryć kiedy bot jest połączony z kanałem głosowym, komenda ta w przypadku zaistnienia błędu przebywania bota na innym kanale programowo wyrzuca bota z danego kanału i czyści kolejkę muzyk.",
-                            }
-                        )
-                    message.channel.send(embeded)
-                    break
+                    const embeded = new discord.MessageEmbed().setColor("#0099ff").setTitle("Command list").setDescription("Wyświetlenie wszelkich komend jakie są w miodku").addFields(
+                        {
+                            name: "BOT save users",
+                            value: "Tworzy listę wszystkich ról użytkowników którzy je posiadają i zapisuje je na serwerze by potem bot mógł je dodać po tym jak osoba wyjdzie i wejdzie",
+                        },
+                        {
+                            name: "BOT punish @user1 @user2 time+format",
+                            value: "dodaje rolę karną dla pingowanych użytkowników na określony czas\n formaty:\n y- lata\n M-miesiąc\nw-tygodnie\nd-dni\nh-godziny\nm-minuty\ns-sekundy\npolecane jest dawanie kar na więcej niż 2 minuty ze względu na timer który sprawdza czas co mitutę, więc dawanie na mniej spowoduje ukaranie użytkownika na zawsze",
+                        },
+                        {
+                            name: "BOT play youtube_link/custom_words",
+                            value: "Dołącza do kanału na którym jest osoba która wpisała komendę i puszcza muzykę w czasie rzeczywistym. w przypadku odtwarzania już jakieś muzyki miodek tworzy listę i dodaję daną muzykę do kolejki by ją później puścić.",
+                        },
+                        {
+                            name: "BOT skip",
+                            value: "W przypadku odtwarzania muzyki na kanale głosowym komenda pomiją odtwarzaną muzykę i w przypadku zaistnienia kolejnej w kolejce, puszcza ją",
+                        },
+                        {
+                            name: "BOT show list",
+                            value: "Pokazuje listę piosenek które mają być puszczone na kanale głosowym.",
+                        },
+                        {
+                            name: "BOT fix connection",
+                            value: "Ponieważ biblioteka discorda jest ułomna i nie umie poprawnie wykryć kiedy bot jest połączony z kanałem głosowym, komenda ta w przypadku zaistnienia błędu przebywania bota na innym kanale programowo wyrzuca bota z danego kanału i czyści kolejkę muzyk.",
+                        }
+                    );
+                    message.channel.send(embeded);
+                    break;
             }
         }
     }
-})
+});
 
 Client.on("guildMemberUpdate", (member: GuildMember | PartialGuildMember) => {
     // niby dziala na kazda zmiane roi, ale tez zmianie pseudonimu jak i usuniecie albo dodanie uzytkownika
-    userDB.updateUserList(Client)
-})
+    userDB.updateUserList(Client);
+});
 
 Client.on("guildMemberAdd", (member: GuildMember | PartialGuildMember) => {
-    console.log("welcoming user")
-    welcomeUser(member)
+    console.log("welcoming user");
+    welcomeUser(member);
     // member.roles.add(member.guild.roles.cache.find(r => r.name == 'debil'))
 
     // user roles validation and assignment
@@ -185,20 +238,20 @@ Client.on("guildMemberAdd", (member: GuildMember | PartialGuildMember) => {
         if (typeof o.clientId != "undefined" && o.clientId)
             if (o.clientId == member.user?.id) {
                 o.roles.map((role: string) => {
-                    const roleObj:discord.Role = member.guild.roles.cache.find((r: discord.Role) => r.name == role)
-                    if(!member.manageable || !roleObj.editable){
+                    const roleObj: discord.Role = member.guild.roles.cache.find((r: discord.Role) => r.name == role);
+                    if (!member.manageable || !roleObj.editable) {
                         console.log(`cannot manipulate role assigned for ${member.user.username}\n Here's his saved role: ${role}`);
-                        (Client.channels.cache.get(process.env.DISCORD_COMMAND_CHANNEL) as TextChannel).send(`Cannot add role ${role} to user: ${member.user.username}`)
+                        (Client.channels.cache.get(process.env.DISCORD_COMMAND_CHANNEL) as TextChannel).send(`Cannot add role ${role} to user: ${member.user.username}`);
                     } else {
-                        member.roles.add(roleObj)
+                        member.roles.add(roleObj);
                     }
-                })
+                });
             }
-    })
-})
+    });
+});
 
-console.log("działa")
+console.log("działa");
 
-Client.login(process.env.TOKEN)
-const port = process.env.PORT || 3000
-app.listen(port, () => console.log(`listening on ${port}`))
+Client.login(process.env.TOKEN);
+const port = process.env.PORT || 3000;
+app.listen(port, () => console.log(`listening on ${port}`));
