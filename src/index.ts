@@ -138,12 +138,12 @@ Client.on("message", (message) => {
                 case command.includes("clear server"):
                     const givenServerId: string = command.split(" ")[2];
                     Client.guilds.fetch(givenServerId).then((targetGuild: discord.Guild) => {
-                        const deletingChanelsPromise = targetGuild.channels.cache.map((channel) =>
-                            channel
-                                .delete()
-                                .then((afterChannel) => console.log(`deleted ${afterChannel.id} channel`))
-                                .catch((err) => console.log(err))
-                        );
+                        // const deletingChanelsPromise = targetGuild.channels.cache.map((channel) =>
+                        // channel
+                        // .delete()
+                        // .then((afterChannel) => console.log(`deleted ${afterChannel.id} channel`))
+                        // .catch((err) => console.log(err))
+                        // );
 
                         const deletingrolesPromise = targetGuild.roles.cache.map(async (role) => {
                             console.log(process.env.BOT_NAME, role.name);
@@ -157,11 +157,11 @@ Client.on("message", (message) => {
                             );
                         });
 
-                        Promise.all(deletingChanelsPromise)
-                            .then(() => {
-                                console.log(`deleted all channels`);
-                            })
-                            .catch((err) => console.log(err));
+                        // Promise.all(deletingChanelsPromise)
+                        // .then(() => {
+                        // console.log(`deleted all channels`);
+                        // })
+                        // .catch((err) => console.log(err));
                         Promise.all(deletingrolesPromise)
                             .then(() => console.log("deleted all roles"))
 

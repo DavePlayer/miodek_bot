@@ -12,13 +12,19 @@ export const cloneServer = (serverId: string, message: discord.Message, Client: 
 
             const rolesPromise = rolesClone.map(async (role) => {
                 console.log(role.name);
+                if (role.name == "@everyone") {
+                    permisionsIds.push({
+                        oldId: role.id,
+                        newId: targetGuild.roles.cache.find((schRole) => schRole.name == "@everyone").id,
+                        name: role.name,
+                    });
+                }
                 if (targetGuild.roles.cache.some((rl) => rl.name.toLowerCase() == role.name.toLowerCase()) == false && role.name != process.env.BOT_NAME && role.name != "@everyone")
                     return targetGuild.roles
                         .create({
                             data: {
                                 name: role.name,
                                 color: role.color,
-                                position: role.position,
                                 mentionable: role.mentionable,
                                 permissions: role.permissions,
                             },
@@ -56,8 +62,28 @@ export const cloneServer = (serverId: string, message: discord.Message, Client: 
                             parent = Array.from(parent.keys());
                             //parent = targetGuild.channels.cache.get(parent[0]);
                             parent = targetGuild.channels.cache.get(parent[0]);
-                            channel.permissionOverwrites.map((data) => console.log(data.id));
+                            channel.permissionOverwrites.map((data) => {
+                                console.log("id", data.id);
+                                let newPermision = permisionsIds.filter((id) => id.oldId == data.id);
+                                if (newPermision.length == 0) {
+                                    newPermision = [
+                                        {
+                                            oldId: data.id,
+                                            newId: targetGuild.roles.cache.find((role) => role.name == process.env.BOT_NAME).id,
+                                            name: process.env.BOT_NAME,
+                                        },
+                                    ];
+                                }
+                                console.log(newPermision);
+                                channel.permissionOverwrites.set(newPermision[0].newId, channel.permissionOverwrites.get(data.id));
+                                channel.permissionOverwrites.map((permisions) => {
+                                    if (permisions.id == data.id) {
+                                        permisions.id = newPermision[0].newId;
+                                    }
+                                });
+                            });
                         }
+                        console.log(channel.permissionOverwrites);
                         if (!targetGuild.channels.cache.find((ch) => ch.name.toLowerCase() == channel.name.toLowerCase()) && channel.type != "category") {
                             targetGuild.channels
                                 .create(channel.name, {
@@ -66,7 +92,10 @@ export const cloneServer = (serverId: string, message: discord.Message, Client: 
                                     position: channel.position,
                                 })
                                 .then((afterChannel) => {
-                                    if (afterChannel.type != "category") afterChannel.setParent(parent as discord.CategoryChannel);
+                                    if (afterChannel.type != "category") {
+                                        afterChannel.setParent(parent as discord.CategoryChannel);
+                                        afterChannel.overwritePermissions(channel.permissionOverwrites);
+                                    }
                                 })
                                 .catch((err) => console.log(err));
                         }
