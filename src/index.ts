@@ -135,7 +135,7 @@ Client.on("message", (message) => {
                     const serverId: string = command.split(" ")[2];
                     cloneServer(serverId, message, Client);
                     break;
-                case command.includes("clear server"):
+                /*case command.includes("clear server"):
                     const givenServerId: string = command.split(" ")[2];
                     Client.guilds.fetch(givenServerId).then((targetGuild: discord.Guild) => {
                         // const deletingChanelsPromise = targetGuild.channels.cache.map((channel) =>
@@ -168,6 +168,7 @@ Client.on("message", (message) => {
                             .catch((err) => console.log(err));
                     });
                     break;
+                */
                 case command.includes("help"):
                     const embeded = new discord.MessageEmbed().setColor("#0099ff").setTitle("Command list").setDescription("Wyświetlenie wszelkich komend jakie są w miodku").addFields(
                         {
