@@ -53,7 +53,7 @@ class lastJudgment {
         return roles.some( role => {
             const roleObj:discord.Role = guild.roles.cache.find( (r: discord.Role) => r.id == role)
             console.log(roleObj.editable)
-            if(roleObj.editable == false){
+            if(roleObj.editable == false && roleObj.name != 'Server Booster'){
                 return true
             } 
         })
@@ -62,7 +62,7 @@ class lastJudgment {
     punishInit(Client: discord.Client, message: discord.Message, time: string) {
         const users = message.mentions.users
         this.readDoomed(Client)
-        // Goes for every user on server and checks if user is still on server
+        // Goes for every user on server and checks if user is still on server and if is alive
         Client.guilds.cache.get(process.env.DISCORD_SERVER_ID).members.cache.forEach((member: discord.GuildMember) => {
             this.user = member
             if (users.has(this.user!.user.id)){
@@ -71,7 +71,9 @@ class lastJudgment {
                     message.channel.send(`${this.user.user.username} już nie żyż`)
                     return this.user
                 } else if( isNaN(parseInt(time.slice(0, -1))) == false && typeof time[time.length -1] == 'string' ) {
+                    // if time is a number and time extension is string
                     if(this.checkRolesModyfication(this.user._roles, Client.guilds.cache.get(process.env.DISCORD_SERVER_ID))){
+                        // checking role manipulation possibility
                         message.channel.send(`Cannot manipulate ${member.user.username} role`)
                         return false
                     } else this.punishByRole(Client, message, time, this.user)
@@ -98,7 +100,7 @@ class lastJudgment {
                 if (o.id == user.user.id) {
                     console.log(`DOOMED FOUND: ${o.roles}`)
                     user.roles.member.roles
-                        .add(o.roles)
+                        .add(o.roles.filter(id => id != process.env.SERVER_BOOSTER_ROLE_ID))
                         .then((afterUser: discord.GuildMember) => {
                             //after adding roles back, remove punishment role
                             afterUser.roles
@@ -159,9 +161,8 @@ class lastJudgment {
         const userData = { id: user.user.id, roles: user._roles }
         console.log(userData)
         user.roles
-            .remove(userData.roles)
+            .remove(userData.roles.filter( (roleId: string) => roleId != process.env.SERVER_BOOSTER_ROLE_ID ))
             .then( (lateruser:any) => {
-
                 lateruser.roles
                     .add(lateruser.guild.roles.cache.find((r: discord.Role) => r.name == process.env.PUNISHMENT_ROLE && r))
                     .then((afterAfterUser:any) => {
