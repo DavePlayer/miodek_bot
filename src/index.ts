@@ -1,8 +1,4 @@
-import discord, {
-    GuildMember,
-    PartialGuildMember,
-    TextChannel,
-} from "discord.js";
+import discord, { GuildMember, PartialGuildMember, TextChannel } from "discord.js";
 import express from "express";
 import "@babel/polyfill";
 import dotenv from "dotenv";
@@ -37,37 +33,23 @@ app.post("/send", (req: express.Request, res: express.Response) => {
     //"channelId": 1234567890,
     //"message": "just message"
     //}
-    if (
-        req.body.type == "sendMessage" &&
-        req.body.channel.length > 0 &&
-        req.body.channelId
-    ) {
+    if (req.body.type == "sendMessage" && req.body.channel.length > 0 && req.body.channelId) {
         switch (req.body.channel) {
             case "bot":
-                (
-                    Client.channels.cache.get(
-                        process!.env!.DISCORD_COMMAND_CHANNEL || ""
-                    ) as TextChannel
-                ).send(req.body.message);
+                (Client.channels.cache.get(process!.env!.DISCORD_COMMAND_CHANNEL || "") as TextChannel).send(
+                    req.body.message
+                );
                 break;
             case "info-social":
-                (
-                    Client.channels.cache.get(
-                        process.env.DISCORD_CHANNEL || ""
-                    ) as TextChannel
-                ).send(req.body.message);
+                (Client.channels.cache.get(process.env.DISCORD_CHANNEL || "") as TextChannel).send(req.body.message);
                 break;
             case "ogolny":
-                (
-                    Client.channels.cache.get(
-                        process.env.DISCORD_MAIN_CHANNEL || ""
-                    ) as TextChannel
-                ).send(req.body.message);
+                (Client.channels.cache.get(process.env.DISCORD_MAIN_CHANNEL || "") as TextChannel).send(
+                    req.body.message
+                );
                 break;
             default:
-                (
-                    Client.channels.cache.get(req.body.channelId) as TextChannel
-                ).send(req.body.message);
+                (Client.channels.cache.get(req.body.channelId) as TextChannel).send(req.body.message);
                 break;
         }
     }
@@ -105,18 +87,12 @@ function matchArray(message: string, matcher: Array<RegExp>): boolean {
 Client.on("message", (message) => {
     //console.log(message.channel.id)
     const matches = [/kiedy/, /której/, /ktorej/, /kotrej/];
-    if (
-        matchArray(message.content, matches) &&
-        message.guild.id == process.env.DISCORD_SERVER_ID
-    ) {
+    if (matchArray(message.content, matches) && message.guild.id == process.env.DISCORD_SERVER_ID) {
         console.log(matchArray(message.content, matches));
         console.log("kieyd live message send");
         message.channel.send(`\`\`\`json${process.env.REMINDER_MESSAGE}\`\`\``);
     }
-    if (
-        message.channel.id == process.env.DISCORD_COMMAND_CHANNEL &&
-        message.content.includes("BOT")
-    ) {
+    if (message.channel.id == process.env.DISCORD_COMMAND_CHANNEL && message.content.includes("BOT")) {
         const regex = message.content.match(/BOT (.*)/);
         if (regex != null) {
             const command = regex[1];
@@ -127,11 +103,7 @@ Client.on("message", (message) => {
                 case command.includes("punish"):
                     const time = command.split(" ");
                     //lastJudgment.punishByRole(Client, message, time[time.length - 1])
-                    lastJudgment.punishInit(
-                        Client,
-                        message,
-                        time[time.length - 1]
-                    );
+                    lastJudgment.punishInit(Client, message, time[time.length - 1]);
                     //Clock.addDynamicReminder({time: new Date(Date.now() + parseFloat(time[time.length - 1]) * 1000 * 60), func: () => console.log('punish that bitch') })
                     break;
                 case command.includes("play"):
@@ -148,39 +120,24 @@ Client.on("message", (message) => {
                     break;
                 case command.includes("slavery mode"):
                     let userChanged: number = 0;
-                    if (
-                        message.guild.me.hasPermission("MANAGE_NICKNAMES") ==
-                        false
-                    )
-                        return message.channel.send(
-                            "brak uprawnień do zmiany nicków"
-                        );
+                    if (message.guild.me.hasPermission("MANAGE_NICKNAMES") == false)
+                        return message.channel.send("brak uprawnień do zmiany nicków");
                     message.guild.members
                         .fetch()
                         .then((members) => {
-                            members.forEach(
-                                (member: discord.GuildMember, key: string) => {
-                                    if (
-                                        !member.roles.cache.find(
-                                            (r) =>
-                                                r.name ==
-                                                process.env.SPECIALROLE
-                                        ) &&
-                                        member.roles.highest.position <
-                                            message.guild.me.roles.highest
-                                                .position &&
-                                        member.id != process.env.OWNER_ID
-                                    ) {
-                                        userChanged += 1;
-                                        member.setNickname(`niewolnik ${key}`);
-                                    }
+                            members.forEach((member: discord.GuildMember, key: string) => {
+                                if (
+                                    !member.roles.cache.find((r) => r.name == process.env.SPECIALROLE) &&
+                                    member.roles.highest.position < message.guild.me.roles.highest.position &&
+                                    member.id != process.env.OWNER_ID
+                                ) {
+                                    userChanged += 1;
+                                    member.setNickname(`niewolnik ${key}`);
                                 }
-                            );
+                            });
                         })
                         .finally(() => {
-                            message.channel.send(
-                                `changed ${userChanged} user nicknames`
-                            );
+                            message.channel.send(`changed ${userChanged} user nicknames`);
                         });
                     break;
                 case command.includes("clone server"):
@@ -225,9 +182,7 @@ Client.on("message", (message) => {
                     const embeded = new discord.MessageEmbed()
                         .setColor("#0099ff")
                         .setTitle("Command list")
-                        .setDescription(
-                            "Wyświetlenie wszelkich komend jakie są w miodku"
-                        )
+                        .setDescription("Wyświetlenie wszelkich komend jakie są w miodku")
                         .addFields(
                             {
                                 name: "BOT save users",
@@ -276,18 +231,12 @@ Client.on("guildMemberAdd", (member: GuildMember | PartialGuildMember) => {
         if (typeof o.clientId != "undefined" && o.clientId)
             if (o.clientId == member.user?.id) {
                 o.roles.map((role: string) => {
-                    const roleObj: discord.Role = member.guild.roles.cache.find(
-                        (r: discord.Role) => r.name == role
-                    );
+                    const roleObj: discord.Role = member.guild.roles.cache.find((r: discord.Role) => r.name == role);
                     if (!member.manageable || !roleObj.editable) {
                         console.log(
                             `cannot manipulate role assigned for ${member.user.username}\n Here's his saved role: ${role}`
                         );
-                        (
-                            Client.channels.cache.get(
-                                process.env.DISCORD_COMMAND_CHANNEL
-                            ) as TextChannel
-                        ).send(
+                        (Client.channels.cache.get(process.env.DISCORD_COMMAND_CHANNEL) as TextChannel).send(
                             `Cannot add role ${role} to user: ${member.user.username}`
                         );
                     } else {
