@@ -1,119 +1,80 @@
-import fs from "fs"
-import discord, {GuildChannel} from 'discord.js'
-import { user, role, json }from './interfaces'
-import {resolve} from "node:dns"
+import fs from "fs";
+import discord, { GuildChannel } from "discord.js";
+// import { user, role, json } from "./interfaces";
+import Database, { IUser } from "./database";
+import { ObjectId } from "mongodb";
+
+export interface INormalUser extends discord.GuildMember {
+    _roles: Array<string>;
+}
 
 class userDB {
-    users: Array<user>
-    temp: Array<discord.GuildMember>
-    roles: Array<role>
+    users: Array<discord.GuildMember>;
+    roles: Array<any>;
 
     constructor() {
-        this.users = []
-        this.temp = []
-        this.roles = []
+        this.users = [];
+        this.roles = [];
     }
 
-    readClient(Client:discord.Client) {
-        (Client.guilds.cache.get(process.env.DISCORD_SERVER_ID as string) as discord.Guild).members.cache.forEach((user: discord.GuildMember) => {
-            this.temp = [...this.temp, user]
+    readClient = (message: discord.Message | discord.CommandInteraction) =>
+        new Promise<discord.Collection<string, discord.GuildMember>>((res, rej) => {
+            message.guild.members
+                .fetch()
+                .then((members) => {
+                    res(members);
+                })
+                .catch((err) => rej(err));
         });
 
-        (Client.guilds.cache.get(process.env.DISCORD_SERVER_ID as string) as discord.Guild).roles.cache.forEach((role: discord.Role) => {
-            this.roles = [...this.roles, { id: role.id, name: role.name }]
-        })
-    }
-
-    readFile = (Client: discord.Client) => new Promise<any>( (res, rej) => {
-        const file = fs.readFileSync("./roles.json", "utf-8")
-        if (file.toString().length > 2) {
-            this.users = JSON.parse(file).users
-            this.roles = JSON.parse(file).roles
-            res(true)
-        } else {
-            rej(false)
-        }
-        console.log(file)
-    } )
-
-    makeUserList = (message:discord.Message | string, Client:discord.Client, next?: (data:string) => void ) => {
-        this.readClient(Client)
-        let json: [] | Array<user> = []
-        this.temp.map((user: any) => {
-            if (user._roles.length > 0)
-                json = [
-                    ...json,
-                    {
-                        name: user.user.username,
-                        clientId: user.user.id,
-                        roles: this.roles
-                            .filter((role) => {
-                                if (user._roles.includes(role.id)) return role.name
-                            })
-                            .map((o) => o.name),
-                        user: user._roles,
-                    },
-                ]
-        })
-        const obj:json = {users: json, roles: this.roles }
-        const data: string = JSON.stringify(obj)
-        fs.writeFile("roles.json", data, (err) => {
-            if (err) console.log(err)
-            else {
-                console.log(`----------\n this.users saved properly`)
-                if (next) next(data)
-                this.temp = []
-                this.roles = []
-                this.users = json
-                if (typeof message != "string") message.channel.send("users saved properly")
-            }
-        })
-    }
-
-    updateUserList(Client: discord.Client) {
-        this.readFile(Client).then( () => {
-            (Client.guilds.cache.get(process.env.DISCORD_SERVER_ID as string) as discord.Guild).members.cache.forEach((user:any) => {
-                let found = false
-                this.users.some((o) => {
-                    if (o.clientId && o.clientId == user.user.id) {
-                        found = true
-                        o.roles = this.roles
-                            .filter((role) => {
-                                if (user._roles.includes(role.id)) return role.name
-                            })
-                            .map((o) => o.name)
-                        return o
-                    }
-                })
-                if (!found) {
-                    this.users = [
-                        ...this.users,
-                        {
-                            name: user.user.username,
-                            clientId: user.user.id,
-                            roles: this.roles
-                                .filter((role) => {
-                                    if (user._roles.includes(role.id)) return role.name
-                                })
-                                .map((o) => o.name),
-                            user: user._roles,
-                        },
-                    ]
-                }
+    makeUserList = (message: discord.Message | discord.CommandInteraction, next?: (data: string) => void) => {
+        this.users = [];
+        this.readClient(message)
+            .then((members: discord.Collection<string, discord.GuildMember>) => {
+                members.forEach((user: discord.GuildMember) => {
+                    this.users = [...this.users, user];
+                });
             })
-            const data:string = JSON.stringify({users: this.users,  roles: this.roles })
-            fs.writeFile("roles.json", data, (err) => {
-                if (err) console.log(err)
-                else {
-                    console.log(`----------\n this.users updated properly`)
-                    this.users = []
-                    this.roles = []
-                }
-            })
-            console.log(this.users, this.roles)
-        })
-        .catch( () => this.makeUserList('dsa', Client) )
+            .then(() => {
+                let mapedUsers: [] | Array<IUser> = [];
+                this.users.map((user: any) => {
+                    // console.log(user);
+                    if (user._roles.length > 0)
+                        mapedUsers = [
+                            ...mapedUsers,
+                            {
+                                name: user.user.username,
+                                ClientId: user.user.id,
+                                rolesIds: user._roles,
+                            },
+                        ];
+                });
+                console.log("mapped users: ", mapedUsers);
+                Database.resetDataBase(message.guild.id).then(() =>
+                    Database.insertNewUsers(mapedUsers, message.guild.id)
+                );
+            });
+        // fs.writeFile("roles.json", data, (err) => {
+        //     if (err) console.log(err);
+        //     else {
+        //         console.log(`----------\n this.users saved properly`);
+        //         if (next) next(data);
+        //         this.temp = [];
+        //         this.roles = [];
+        //         this.users = json;
+        //         if (typeof message != "string") message.channel.send("users saved properly");
+        //     }
+        // });
+    };
+
+    updateUserList(member: INormalUser) {
+        const updatedUser: IUser = {
+            name: member.user.username,
+            ClientId: member.user.id,
+            rolesIds: member._roles,
+        };
+        Database.upsertUser(updatedUser, member.guild.id);
     }
 }
 
-export default new userDB()
+export default new userDB();

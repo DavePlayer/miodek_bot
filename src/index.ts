@@ -2,7 +2,7 @@ import discord, { Awaited, GuildMember, Intents, PartialGuildMember, TextChannel
 import express from "express";
 import "@babel/polyfill";
 import dotenv from "dotenv";
-import userDB from "./userList";
+import userDB, { INormalUser } from "./userList";
 import { TwitchManager } from "./startTwitchCheck";
 import { welcomeUser } from "./welcomeUser";
 import lastJudgment from "./rolePunichment";
@@ -87,6 +87,7 @@ Client.on("ready", async () => {
         throw err;
     }
 
+    const Guild = Client.guilds.cache.get(process.env.DISCORD_SERVER_ID);
     Database.establishConnection(process.env.MONGODB_STRING)
         .catch((err) => console.log(err))
         .then(() => {
@@ -96,14 +97,17 @@ Client.on("ready", async () => {
             //     rolesIds: ["312312"],
             //     rolesNames: ["eeee makarena"],
             // });
-            Database.getUser({
-                name: "test1",
-                ClientId: "21341234234",
-                rolesIds: ["312312"],
-                rolesNames: ["eeee makarena"],
-            });
+            // Database.getUser(
+            //     {
+            //         name: "test1",
+            //         ClientId: "21341234234",
+            //         rolesIds: ["312312"],
+            //         rolesNames: ["eeee makarena"],
+            //     },
+            //     Guild.id
+            // );
+            // Database.validateCollection(Guild.id).then((name) => console.log(""));
         });
-    const Guild = Client.guilds.cache.get(process.env.DISCORD_SERVER_ID);
     let commands = null;
     if (Guild) {
         commands = Guild.commands;
@@ -175,9 +179,9 @@ Client.on("interactionCreate", async (interaction) => {
     }
 });
 
-Client.on("guildMemberUpdate", (member: GuildMember | PartialGuildMember) => {
+Client.on("guildMemberUpdate", (oldMember: GuildMember | PartialGuildMember, newMember: GuildMember) => {
     // niby dziala na kazda zmiane roi, ale tez zmianie pseudonimu jak i usuniecie albo dodanie uzytkownika
-    userDB.updateUserList(Client);
+    userDB.updateUserList(newMember as INormalUser);
 });
 
 Client.on("guildMemberAdd", (member: GuildMember | PartialGuildMember) => {
@@ -220,7 +224,7 @@ Client.on("messageCreate", (message: discord.Message): Awaited<any> => {
             const command = regex[1];
             switch (true) {
                 case command.includes("save users"):
-                    userDB.makeUserList(message, Client);
+                    userDB.makeUserList(message);
                     break;
                 case command.includes("punish"):
                     const time = command.split(" ");
