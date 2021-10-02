@@ -90,6 +90,7 @@ class DatabaseC {
                 .collection(collectionName)
                 .findOne({ ClientId: user.ClientId });
             console.log(gotUser);
+            return gotUser;
         } catch (error) {
             console.log(error);
         }

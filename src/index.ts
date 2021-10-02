@@ -11,8 +11,7 @@ import ytMeneger from "./ytMusic";
 import { user } from "./interfaces";
 import Clock from "./clock";
 import moment from "moment";
-import Database from "./database";
-import discordVoice, { VoiceConnectionStatus } from "@discordjs/voice";
+import Database, { IUser } from "./database";
 // import { cloneServer } from "./cloneServer";
 
 dotenv.config();
@@ -190,23 +189,33 @@ Client.on("guildMemberAdd", (member: GuildMember | PartialGuildMember) => {
     // member.roles.add(member.guild.roles.cache.find(r => r.name == 'debil'))
 
     // user roles validation and assignment
-    getFileJson().users.map((o: user) => {
-        if (typeof o.clientId != "undefined" && o.clientId)
-            if (o.clientId == member.user?.id) {
-                o.roles.map((role: string) => {
-                    const roleObj: discord.Role = member.guild.roles.cache.find((r: discord.Role) => r.name == role);
-                    if (!member.manageable || !roleObj.editable) {
-                        console.log(
-                            `cannot manipulate role assigned for ${member.user.username}\n Here's his saved role: ${role}`
-                        );
-                        (Client.channels.cache.get(process.env.DISCORD_COMMAND_CHANNEL) as TextChannel).send(
-                            `Cannot add role ${role} to user: ${member.user.username}`
-                        );
-                    } else {
-                        member.roles.add(roleObj);
-                    }
-                });
-            }
+    // getFileJson().users.map((o: user) => {
+    //     if (typeof o.clientId != "undefined" && o.clientId)
+    //         if (o.clientId == member.user?.id) {
+    //             o.roles.map((role: string) => {
+    //                 const roleObj: discord.Role = member.guild.roles.cache.find((r: discord.Role) => r.name == role);
+    //                 if (!member.manageable || !roleObj.editable) {
+    //                     console.log(
+    //                         `cannot manipulate role assigned for ${member.user.username}\n Here's his saved role: ${role}`
+    //                     );
+    //                     (Client.channels.cache.get(process.env.DISCORD_COMMAND_CHANNEL) as TextChannel).send(
+    //                         `Cannot add role ${role} to user: ${member.user.username}`
+    //                     );
+    //                 } else {
+    //                     member.roles.add(roleObj);
+    //                 }
+    //             });
+    //         }
+    // });
+    const dataUser: IUser = {
+        name: member.user.username,
+        ClientId: member.user.id,
+        rolesIds: (member as INormalUser)._roles,
+    };
+    Database.getUser(dataUser, member.guild.id).then((databaseUser) => {
+        databaseUser.rolesIds.map((roleId: string) => {
+            member.roles.add(roleId);
+        });
     });
 });
 
