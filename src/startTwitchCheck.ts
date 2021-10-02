@@ -1,5 +1,5 @@
-import node_fetch from "node-fetch";
 import discord, { Client, TextChannel } from "discord.js";
+import node_fetch from "node-fetch";
 const fetch = node_fetch;
 import moment, { Moment } from "moment";
 
@@ -15,9 +15,9 @@ class TwitchManagerC {
         const json = await fetch(
             `https://api.twitch.tv/kraken/streams/${process.env.TWITCH_CHANNEL_ID}?client_id=${process.env.TWITCH_CLIENT_ID}&token=${process.env.TWITCH_TOKEN}&api_version=5`
         );
-        const StreamData = await json.json();
+        const StreamData: any = await json.json();
         if (StreamData.stream) {
-            const embeded = new discord.MessageEmbed()
+            const embeded: discord.MessageEmbed = new discord.MessageEmbed()
                 .setTitle(`${StreamData.stream.channel.game} : ${StreamData.stream.channel.status}`)
                 .setColor(0xfa3c87)
                 .setURL(`${StreamData.stream.channel.url}`)
@@ -29,10 +29,10 @@ class TwitchManagerC {
                     this.remindedHourly = true;
                     setTimeout(async () => (this.remindedHourly = false), 1000 * 60 * 60 * 5);
                     try {
-                        return (Client.channels.cache.get(process.env.DISCORD_CHANNEL as string) as TextChannel).send(
-                            `@everyone ${process.env.TWITCH_USERNAME} teraz streamuje`,
-                            embeded
-                        );
+                        return (Client.channels.cache.get(process.env.DISCORD_CHANNEL as string) as TextChannel).send({
+                            content: `@everyone ${process.env.TWITCH_USERNAME} teraz streamuje`,
+                            embeds: [embeded],
+                        });
                     } catch (err) {
                         console.log(err);
                     }

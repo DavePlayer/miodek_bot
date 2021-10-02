@@ -1,4 +1,4 @@
-import discord, { GuildMember, PartialGuildMember, TextChannel } from "discord.js";
+import discord, { Awaited, GuildMember, Intents, PartialGuildMember, TextChannel } from "discord.js";
 import express from "express";
 import "@babel/polyfill";
 import dotenv from "dotenv";
@@ -11,14 +11,23 @@ import ytMeneger from "./ytMusic";
 import { user } from "./interfaces";
 import Clock from "./clock";
 import moment from "moment";
-import { cloneServer } from "./cloneServer";
+import discordVoice, { VoiceConnectionStatus } from "@discordjs/voice";
+// import { cloneServer } from "./cloneServer";
 
 dotenv.config();
 
-export const Client = new discord.Client();
+export const Client = new discord.Client({
+    intents: [
+        Intents.FLAGS.GUILDS,
+        Intents.FLAGS.GUILD_INVITES,
+        Intents.FLAGS.GUILD_MESSAGES,
+        Intents.FLAGS.GUILD_MEMBERS,
+        Intents.FLAGS.GUILD_VOICE_STATES,
+    ],
+});
 ytMeneger.setClient(Client);
-const app: express.Application = express();
-app.use(express.json());
+const app = express();
+app.use(express.json() as express.RequestHandler);
 
 const getFileJson = () => {
     return JSON.parse(fs.readFileSync("./roles.json", "utf-8"));
@@ -66,14 +75,53 @@ Client.on("ready", async () => {
         Clock.startClock();
         Client.user?.setPresence({
             status: "online", //You can show online, idle....
-            activity: {
-                name: process.env.STATUS, //The message shown
-                type: "PLAYING", //PLAYING: WATCHING: LISTENING: STREAMING:
-            },
+            activities: [
+                {
+                    name: process.env.STATUS, //The message shown
+                    type: "PLAYING", //PLAYING: WATCHING: LISTENING: STREAMING:
+                },
+            ],
         });
     } catch (err) {
         throw err;
     }
+
+    const Guild = Client.guilds.cache.get(process.env.DISCORD_SERVER_ID);
+    let commands = null;
+    if (Guild) {
+        commands = Guild.commands;
+    } else commands = Client.application.commands;
+
+    console.log(discord.Constants.ApplicationCommandOptionTypes.STRING);
+
+    commands.create({
+        name: "test",
+        description: "testing command",
+    });
+    commands.create({
+        name: "play",
+        description: "Play YouTube Music from link or custom words",
+        options: [
+            {
+                name: "name",
+                description: "either YT link or custom search words",
+                required: true,
+                type: discord.Constants.ApplicationCommandOptionTypes.STRING,
+            },
+        ],
+    });
+    commands.create({
+        name: "showlist",
+        description: "Show YouTube music querry",
+    });
+    commands.create({
+        name: "skip",
+        description: "skip YouTube music",
+    });
+    commands.create({
+        name: "fixconnection",
+        description: "clear querry and destroy bot channel connection",
+    });
 });
 
 function matchArray(message: string, matcher: Array<RegExp>): boolean {
@@ -84,7 +132,64 @@ function matchArray(message: string, matcher: Array<RegExp>): boolean {
     });
 }
 
-Client.on("message", (message) => {
+Client.on("interactionCreate", async (interaction) => {
+    if (!interaction.isCommand()) return;
+    switch (interaction.commandName) {
+        case "test":
+            interaction.reply({
+                content: "test is succesfull, now go and die",
+                // ephemeral: true,
+                // ^ only you can see this
+            });
+            break;
+        case "play":
+            const link = interaction.options.getString("name");
+            ytMeneger.playMusic(interaction, link);
+            break;
+        case "showlist":
+            ytMeneger.displayQuerry(interaction);
+            break;
+        case "skip":
+            ytMeneger.skipSong(interaction);
+            break;
+        case "fixconnection":
+            ytMeneger.fixConnection(interaction);
+            break;
+    }
+});
+
+Client.on("guildMemberUpdate", (member: GuildMember | PartialGuildMember) => {
+    // niby dziala na kazda zmiane roi, ale tez zmianie pseudonimu jak i usuniecie albo dodanie uzytkownika
+    userDB.updateUserList(Client);
+});
+
+Client.on("guildMemberAdd", (member: GuildMember | PartialGuildMember) => {
+    console.log("welcoming user");
+    welcomeUser(member);
+    // member.roles.add(member.guild.roles.cache.find(r => r.name == 'debil'))
+
+    // user roles validation and assignment
+    getFileJson().users.map((o: user) => {
+        if (typeof o.clientId != "undefined" && o.clientId)
+            if (o.clientId == member.user?.id) {
+                o.roles.map((role: string) => {
+                    const roleObj: discord.Role = member.guild.roles.cache.find((r: discord.Role) => r.name == role);
+                    if (!member.manageable || !roleObj.editable) {
+                        console.log(
+                            `cannot manipulate role assigned for ${member.user.username}\n Here's his saved role: ${role}`
+                        );
+                        (Client.channels.cache.get(process.env.DISCORD_COMMAND_CHANNEL) as TextChannel).send(
+                            `Cannot add role ${role} to user: ${member.user.username}`
+                        );
+                    } else {
+                        member.roles.add(roleObj);
+                    }
+                });
+            }
+    });
+});
+
+Client.on("messageCreate", (message: discord.Message): Awaited<any> => {
     //console.log(message.channel.id)
     const matches = [/kiedy/, /której/, /ktorej/, /kotrej/];
     if (matchArray(message.content, matches) && message.guild.id == process.env.DISCORD_SERVER_ID) {
@@ -107,7 +212,6 @@ Client.on("message", (message) => {
                     //Clock.addDynamicReminder({time: new Date(Date.now() + parseFloat(time[time.length - 1]) * 1000 * 60), func: () => console.log('punish that bitch') })
                     break;
                 case command.includes("play"):
-                    ytMeneger.playMusic(message);
                     break;
                 case command.includes("skip"):
                     ytMeneger.skipSong(message);
@@ -120,30 +224,30 @@ Client.on("message", (message) => {
                     break;
                 case command.includes("slavery mode"):
                     let userChanged: number = 0;
-                    if (message.guild.me.hasPermission("MANAGE_NICKNAMES") == false)
+                    if (message.guild.me.permissions.has("MANAGE_NICKNAMES") == false)
                         return message.channel.send("brak uprawnień do zmiany nicków");
-                    message.guild.members
-                        .fetch()
-                        .then((members) => {
-                            members.forEach((member: discord.GuildMember, key: string) => {
-                                if (
-                                    !member.roles.cache.find((r) => r.name == process.env.SPECIALROLE) &&
-                                    member.roles.highest.position < message.guild.me.roles.highest.position &&
-                                    member.id != process.env.OWNER_ID
-                                ) {
-                                    userChanged += 1;
-                                    member.setNickname(`niewolnik ${key}`);
-                                }
-                            });
-                        })
-                        .finally(() => {
-                            message.channel.send(`changed ${userChanged} user nicknames`);
-                        });
+                    // message.guild.members
+                    //     .fetch()
+                    //     .then((members: discord.GuildMemberManager) => {
+                    //         members.forEach((member: discord.GuildMember, key: string) => {
+                    //             if (
+                    //                 !member.roles.cache.find((r) => r.name == process.env.SPECIALROLE) &&
+                    //                 member.roles.highest.position < message.guild.me.roles.highest.position &&
+                    //                 member.id != process.env.OWNER_ID
+                    //             ) {
+                    //                 userChanged += 1;
+                    //                 member.setNickname(`niewolnik ${key}`);
+                    //             }
+                    //         });
+                    //     })
+                    //     .finally(() => {
+                    //         message.channel.send(`changed ${userChanged} user nicknames`);
+                    //     });
                     break;
-                case command.includes("clone server"):
-                    const serverId: string = command.split(" ")[2];
-                    cloneServer(serverId, message, Client);
-                    break;
+                // case command.includes("clone server"):
+                //     const serverId: string = command.split(" ")[2];
+                //     cloneServer(serverId, message, Client);
+                //     break;
                 /*case command.includes("clear server"):
                     const givenServerId: string = command.split(" ")[2];
                     Client.guilds.fetch(givenServerId).then((targetGuild: discord.Guild) => {
@@ -209,42 +313,13 @@ Client.on("message", (message) => {
                                 value: "Ponieważ biblioteka discorda jest ułomna i nie umie poprawnie wykryć kiedy bot jest połączony z kanałem głosowym, komenda ta w przypadku zaistnienia błędu przebywania bota na innym kanale programowo wyrzuca bota z danego kanału i czyści kolejkę muzyk.",
                             }
                         );
-                    message.channel.send(embeded);
+                    message.channel.send({
+                        embeds: [embeded],
+                    });
                     break;
             }
         }
     }
-});
-
-Client.on("guildMemberUpdate", (member: GuildMember | PartialGuildMember) => {
-    // niby dziala na kazda zmiane roi, ale tez zmianie pseudonimu jak i usuniecie albo dodanie uzytkownika
-    userDB.updateUserList(Client);
-});
-
-Client.on("guildMemberAdd", (member: GuildMember | PartialGuildMember) => {
-    console.log("welcoming user");
-    welcomeUser(member);
-    // member.roles.add(member.guild.roles.cache.find(r => r.name == 'debil'))
-
-    // user roles validation and assignment
-    getFileJson().users.map((o: user) => {
-        if (typeof o.clientId != "undefined" && o.clientId)
-            if (o.clientId == member.user?.id) {
-                o.roles.map((role: string) => {
-                    const roleObj: discord.Role = member.guild.roles.cache.find((r: discord.Role) => r.name == role);
-                    if (!member.manageable || !roleObj.editable) {
-                        console.log(
-                            `cannot manipulate role assigned for ${member.user.username}\n Here's his saved role: ${role}`
-                        );
-                        (Client.channels.cache.get(process.env.DISCORD_COMMAND_CHANNEL) as TextChannel).send(
-                            `Cannot add role ${role} to user: ${member.user.username}`
-                        );
-                    } else {
-                        member.roles.add(roleObj);
-                    }
-                });
-            }
-    });
 });
 
 console.log("działa");
