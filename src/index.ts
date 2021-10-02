@@ -11,6 +11,7 @@ import ytMeneger from "./ytMusic";
 import { user } from "./interfaces";
 import Clock from "./clock";
 import moment from "moment";
+import Database from "./database";
 import discordVoice, { VoiceConnectionStatus } from "@discordjs/voice";
 // import { cloneServer } from "./cloneServer";
 
@@ -86,6 +87,22 @@ Client.on("ready", async () => {
         throw err;
     }
 
+    Database.establishConnection(process.env.MONGODB_STRING)
+        .catch((err) => console.log(err))
+        .then(() => {
+            // Database.insertNewUser({
+            //     name: "test1",
+            //     ClientId: "21341234234",
+            //     rolesIds: ["312312"],
+            //     rolesNames: ["eeee makarena"],
+            // });
+            Database.getUser({
+                name: "test1",
+                ClientId: "21341234234",
+                rolesIds: ["312312"],
+                rolesNames: ["eeee makarena"],
+            });
+        });
     const Guild = Client.guilds.cache.get(process.env.DISCORD_SERVER_ID);
     let commands = null;
     if (Guild) {
