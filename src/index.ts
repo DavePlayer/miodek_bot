@@ -244,7 +244,6 @@ Client.on("guildMemberAdd", (member: GuildMember | PartialGuildMember) => {
         rolesIds: (member as INormalUser)._roles,
     };
     Database.getUser(dataUser.ClientId, member.guild.id).then((databaseUser) => {
-        console.log("newly joined user: ", databaseUser);
         databaseUser.rolesIds.map((roleId: string) => {
             member.roles.add(roleId);
         });
