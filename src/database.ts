@@ -93,6 +93,19 @@ class DatabaseC {
             console.log(error);
         }
     };
+    removeUser = async (ClientId: string, collectionName: string) => {
+        try {
+            collectionName = await this.validateCollection(collectionName);
+            const removedUser = await this.client
+                .db("miodek")
+                .collection(collectionName)
+                .deleteOne({ ClientId: ClientId });
+            console.log(removedUser);
+            return removedUser;
+        } catch (error) {
+            console.log(error);
+        }
+    };
 
     // update if exist | create if not existing
     upsertUser = async (user: IUser, collectionName: string) => {

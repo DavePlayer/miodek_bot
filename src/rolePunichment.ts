@@ -4,7 +4,7 @@ import userDB from "./userList";
 import { role, doomed, json, user } from "./interfaces";
 import Clock from "./clock";
 import moment, { Moment, unitOfTime } from "moment";
-import database from "./database";
+import database, { IUser } from "./database";
 
 interface newGuildMember extends discord.GuildMember {
     _roles: Array<string>;
@@ -56,24 +56,20 @@ class lastJudgment {
         message: discord.Message | discord.CommandInteraction,
         member: discord.GuildMember
     ): Promise<boolean> {
-        console.log(`members role ids list: `, roles);
         const roleObj = await guild.roles.fetch();
         return roleObj.some((role) => {
             if (roles.includes(role.id)) {
-                console.log(`czy rola ${role.name} jest do educji: ${role.editable}`);
                 if (role.editable == false || role.name == "Server Booster") {
-                    console.log("role jest server booster albo nie jest edytowalna");
                     message.reply(`cannot manipulate ${member} role: ${role}`);
                     return true;
                 } else {
-                    console.log("role jest edytowalna - HURAAA!!!");
                     return false;
                 }
             }
         });
     }
 
-    chechIfDoomed = async (clientID: string, guildID: string) => {
+    getDoomed = async (clientID: string, guildID: string) => {
         const user = await database.getUser(clientID, `${guildID}-punishedUsers`);
         return user;
     };
@@ -85,9 +81,9 @@ class lastJudgment {
         time: string
     ) {
         // Goes for every user on server and checks if user is still on server and if is alive
-        const membersColelction = message.guild.members.fetch().then(async (members) => {
+        message.guild.members.fetch().then(async (members) => {
             if (members.has(member.id)) {
-                const isDoomed = await this.chechIfDoomed(member.id, message.guild.id);
+                const isDoomed = await this.getDoomed(member.id, message.guild.id);
                 if (isDoomed != null) {
                     console.log(`${this.user.user.username} is already being punished`);
                     message.reply({
@@ -96,13 +92,11 @@ class lastJudgment {
                     });
                 } else {
                 }
-                //     } else if (isNaN(parseInt(time.slice(0, -1))) == false && typeof time[time.length - 1] == "string") {
-                //         // if time is a number and time extension is string
                 if (await this.checkRolesModyfication(member._roles, message.guild, message, member)) {
                 } else {
-                    // this.punishByRole();
-                    console.log("punish this man");
-                    message.reply(`punishing user - temp`);
+                    this.punishByRole(message, time, member, punishmentRole);
+                    // console.log("punish this man");
+                    // message.reply(`punishing user - temp`);
                 }
             } else {
                 console.log(`user not on server`);
@@ -110,227 +104,59 @@ class lastJudgment {
         });
     }
 
-    releaseDoomed(user: any, Client: discord.Client) {
+    async releaseDoomed(
+        member: discord.GuildMember & { _roles: Array<string> },
+        message: discord.Message | discord.CommandInteraction,
+        punishmentRole: discord.Role,
+        userData: IUser
+    ) {
         //checking if user is still on server
-        let isUserOnServer: boolean = false;
-        Client.guilds.cache.get(process.env.DISCORD_SERVER_ID).members.cache.some((newUsers: discord.GuildMember) => {
-            if (newUsers.user.id == user.user.id) {
-                isUserOnServer = true;
-                return true;
-            }
-        });
+        const allMembers = await message.guild.members.fetch();
+        const isUserOnServer = allMembers.has(member.user.id);
         if (isUserOnServer) {
-            this.doomed.some((o) => {
-                if (o.id == user.user.id) {
-                    console.log(`DOOMED FOUND: ${o.roles}`);
-                    user.roles.member.roles
-                        .add(o.roles.filter((id) => id != process.env.SERVER_BOOSTER_ROLE_ID))
-                        .then((afterUser: discord.GuildMember) => {
-                            //after adding roles back, remove punishment role
-                            afterUser.roles
-                                .remove(
-                                    user.guild.roles.cache.find(
-                                        (r: discord.Role) => r.name == process.env.PUNISHMENT_ROLE && r
-                                    )
-                                )
-                                .then(() => {
-                                    //after removing punishment role, remove user from doomed file
-                                    this.doomed = this.doomed.filter((o) => {
-                                        if (o.id != user.user.id) return user;
-                                    });
-                                    fs.writeFileSync("./punishedUsers.json", JSON.stringify(this.doomed));
-                                })
-                                .catch((err: discord.ErrorEvent) => console.log(err));
-                            return 1;
-                        })
-                        .catch((err: discord.ErrorEvent) => console.log(err));
-                }
-            });
+            const doomedUser = await this.getDoomed(member.user.id, message.guild.id);
+            // return user his roles
+            member.roles
+                .add(doomedUser.rolesIds)
+                .then((afterUser: discord.GuildMember) => {
+                    //after adding roles back, remove punishment role
+                    afterUser.roles.remove(punishmentRole).catch((err: discord.ErrorEvent) => console.log(err));
+                    return;
+                })
+                .catch((err: discord.ErrorEvent) => console.log(err));
         } else {
-            this.releaseDoomedFromFile(user, Client);
+            // edit database to give back roles
+            await database.upsertUser(userData, message.guild.id);
         }
+        await database.removeUser(member.user.id, `${message.guild.id}-punishedUsers`);
     }
 
-    releaseDoomedFromFile(user: any, Client: discord.Client) {
-        let savedRoles: json = JSON.parse(fs.readFileSync("./roles.json", "utf-8"));
-        savedRoles.users.some((o: user) => {
-            if (o.clientId == user.user.id) {
-                console.log(`zwalnianie użytkownika po pliku w którym istnieje`);
-                console.log("found doomed");
-                o.roles = o.roles.filter((role) => role != process.env.PUNISHMENT_ROLE && role);
-                console.log(o.roles);
-                o.roles = this.roles
-                    .filter((role: role) => {
-                        const [data] = this.doomed.filter((doom) => {
-                            if (doom.id == user.user.id && doom.roles) return doom.roles;
-                        });
-                        console.log("doooomed", data);
-                        if (data.roles.includes(role.id)) return role;
-                    })
-                    .map((ll) => ll.name);
-                return 1;
-            }
-        });
-        console.log(savedRoles);
-        // this.saveRoles(savedRoles, user);
-    }
-
-    punishByRole(Client: discord.Client, message: discord.Message, time: string, user: any) {
+    punishByRole(
+        message: discord.Message | discord.CommandInteraction,
+        time: string,
+        member: discord.GuildMember & { _roles: Array<string> },
+        punishmentRole: discord.Role
+    ) {
         console.log("coś działa XD");
-        const userData = { id: user.user.id, roles: user._roles };
-        console.log(userData);
-        user.roles
-            .remove(userData.roles.filter((roleId: string) => roleId != process.env.SERVER_BOOSTER_ROLE_ID))
-            .then((lateruser: any) => {
-                lateruser.roles
-                    .add(
-                        lateruser.guild.roles.cache.find(
-                            (r: discord.Role) => r.name == process.env.PUNISHMENT_ROLE && r
-                        )
-                    )
-                    .then((afterAfterUser: any) => {
-                        // this.writeDownDoomed(userData);
-                        const type: string = time.slice(-1);
-                        const timeNum: number = parseInt(time.slice(0, -1));
-                        const releasement: Moment = moment().add(timeNum, `${type}` as unitOfTime.DurationConstructor);
-                        message.channel.send(
-                            `${
-                                user.user.username
-                            } is abonished to the depths of hell 2.0. Person shall be released: \`${releasement.date()}-${
-                                releasement.month() + 1
-                            }-${releasement.year()} at ${releasement.hour()}:${releasement.minutes()}:${releasement.seconds()}\``
-                        );
-                        //setTimeout(() => this.releaseDoomed(afterAfterUser, Client), 1000 * parseInt(time))
-                        Clock.addDynamicReminder({
-                            time: releasement,
-                            func: () => this.releaseDoomed(afterAfterUser, Client),
-                        });
-                    });
+        const userData: IUser = { name: member.user.username, ClientId: member.user.id, rolesIds: member._roles };
+        member.roles.remove(userData.rolesIds).then((lateruser: discord.GuildMember) => {
+            lateruser.roles.add(punishmentRole).then((afterAfterUser: discord.GuildMember) => {
+                const type: string = time.slice(-1);
+                const timeNum: number = parseInt(time.slice(0, -1));
+                const releasement: Moment = moment().add(timeNum, `${type}` as unitOfTime.DurationConstructor);
+                message.reply(
+                    `${member} is assigned ${punishmentRole}. Person shall be released: \`${releasement.date()}-${
+                        releasement.month() + 1
+                    }-${releasement.year()} at ${releasement.hour()}:${releasement.minutes()}:${releasement.seconds()}\``
+                );
+                //setTimeout(() => this.releaseDoomed(afterAfterUser, Client), 1000 * parseInt(time))
+                Clock.addDynamicReminder({
+                    time: releasement,
+                    func: () => this.releaseDoomed(member, message, punishmentRole, userData),
+                });
+                database.insertNewUser(userData, `${message.guild.id}-punishedUsers`);
             });
-
-        //gonna be rewriten either way, so for now it's unnecessary
-        /*        console.log(users)
-        this.readDoomed(Client)
-        // Goes for every user on server and checks if user is still on server
-        Client.guilds.cache.get(process.env.DISCORD_SERVER_ID).members.cache.forEach((user: discord.user) => {
-            this.user = user
-            if (users.has(this.user.user.id) && isNaN(time) != true) {
-                if (this.doomed.some((o) => o.id == this.user.user.id)) {
-                    console.log(`${user.user.username} już nie żyż`)
-                    Client.channels.cache
-                        .get(process.env.DISCORD_COMMAND_CHANNEL)
-                        .send(`${this.user.user.username} już nie żyż`)
-                    return this.user
-                } else {
-                    //delete and save to file remaining roles that user had
-                    const userData = { id: this.user.user.id, roles: this.user.roles.member._roles }
-                    this.saveDoomed(userData)
-                    user.roles
-                        .remove(userData.roles)
-                        .then(() => {
-                            // add punishment role
-                            user.roles
-                                .add(user.guild.roles.cache.find((r: discord.role) => r.name == process.env.PUNISHMENT_ROLE && r))
-                                .then(() => {
-                                    console.log(this.doomed)
-
-                                    Client.channels.cache
-                                        .get(process.env.DISCORD_COMMAND_CHANNEL)
-                                        .send(
-                                            `${
-                                                user.user.username
-                                            } is abonished to the depths of hell 2.0 for ${parseFloat(time)} minutes`
-                                        )
-                                    setTimeout(async () => {
-                                        console.log("------------\n zwalnianie użytkownika \n")
-                                        console.log(this.doomed)
-                                        this.readDoomed(Client)
-
-                                        //checking if user is still on server
-                                        let isUserOnServer = false
-                                        Client.guilds.cache
-                                            .get(process.env.DISCORD_SERVER_ID)
-                                            .members.cache.some((newUsers: discord.members) => {
-                                                if (newUsers.user.id == user.user.id) {
-                                                    isUserOnServer = true
-                                                    return 1
-                                                }
-                                            })
-
-                                        if (isUserOnServer) {
-                                            // if user is on serwer then remove punishment role from him
-                                            this.doomed.some((o) => {
-                                                console.log(user.user)
-                                                if (o.id == user.user.id) {
-                                                    console.log(`DOOMED FOUND: ${o.roles}`)
-                                                    user.roles.member.roles
-                                                        .add(o.roles)
-                                                        .then((afterUser: discord.user) => {
-                                                            //after add ing this  console log it started working
-                                                            /*console.log(
-                                                                user.guild.roles.cache.find(
-                                                                    (r) => r.name == process.env.PUNISHMENT_ROLE && r
-                                                                )
-                                                            )
-                                                            afterUser.roles
-                                                                .remove(
-                                                                    user.guild.roles.cache.find(
-                                                                        (r: discord.role) =>
-                                                                            r.name == process.env.PUNISHMENT_ROLE && r
-                                                                    )
-                                                                )
-                                                                .then(() => {
-                                                                    this.doomed = this.doomed.filter((o) => {
-                                                                        if (o.id != user.user.id) return user
-                                                                    })
-                                                                    fs.writeFileSync(
-                                                                        "./punishedUsers.json",
-                                                                        JSON.stringify(this.doomed)
-                                                                    )
-                                                                })
-                                                                .catch((err: discord.err) => console.log(err))
-                                                            return 1
-                                                        })
-                                                        .catch((err: discord.err) => console.log(err))
-                                                }
-                                            })
-                                        } else {
-                                            let savedRoles: roles = JSON.parse(fs.readFileSync("./roles.json", "utf-8"))
-                                            console.log(savedRoles)
-                                            console.log(`zwalnianie użytkownika po pliku w którym istnieje`)
-                                            savedRoles.some((o: user | rolesArray) => {
-                                                //pod dawidem
-                                                if (o.clientId == user.user.id) {
-                                                    console.log("found doomed")
-                                                    o.roles = o.roles.filter(
-                                                        (role) => role != process.env.PUNISHMENT_ROLE && role
-                                                    )
-                                                    console.log(o.roles)
-                                                    o.roles =this.roles.filter((role: role) => {
-                                                        const [data] = this.doomed.filter((doom) => {
-                                                            if (doom.id == user.user.id && doom.roles) return doom.roles
-                                                        })
-                                                        console.log("doooomed", data)
-                                                        if (data.roles.includes(role.id)) return role.name
-                                                    })
-                                                    o.roles = o.roles.filter((ll) => ll)
-                                                    return 1
-                                                }
-                                            })
-                                            console.log(savedRoles)
-                                            this.saveRoles(savedRoles, user)
-                                            // releasing punishment role from saved roles file and returning old ones
-                                        }
-                                    }, parseFloat(time) * 1000 * 60)
-                                })
-                                .catch((err) => console.log(err))
-                        })
-                        .catch((err) => console.log(err))
-                }
-            } else {
-                console.log("not this user or time invalid")
-            }
-        })*/
+        });
     }
 }
 
