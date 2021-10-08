@@ -1,9 +1,10 @@
 import fs from "fs";
-import discord from "discord.js";
+import discord, { Interaction } from "discord.js";
 import userDB from "./userList";
 import { role, doomed, json, user } from "./interfaces";
 import Clock from "./clock";
 import moment, { Moment, unitOfTime } from "moment";
+import database from "./database";
 
 interface newGuildMember extends discord.GuildMember {
     _roles: Array<string>;
@@ -20,71 +21,91 @@ class lastJudgment {
         this.user = null;
     }
 
-    readDoomed(Client: discord.Client) {
-        this.doomed = JSON.parse(fs.readFileSync("./punishedUsers.json", "utf-8"));
-        const data = fs.readFileSync("./roles.json", "utf-8");
-        console.log(`----------------------\n`, data, "\n--------------------");
-        if (data.toString().length <= 1) {
-            userDB.makeUserList(null, (data2: string) => {
-                const json: json = JSON.parse(data2);
-                this.roles = json.roles;
-            });
-        } else {
-            console.log(data);
-            const json: json = JSON.parse(data);
-            this.roles = json.roles;
-        }
-    }
+    // readDoomed(Client: discord.Client) {
+    //     this.doomed = JSON.parse(fs.readFileSync("./punishedUsers.json", "utf-8"));
+    //     const data = fs.readFileSync("./roles.json", "utf-8");
+    //     console.log(`----------------------\n`, data, "\n--------------------");
+    //     if (data.toString().length <= 1) {
+    //         userDB.makeUserList(null, (data2: string) => {
+    //             const json: json = JSON.parse(data2);
+    //             this.roles = json.roles;
+    //         });
+    //     } else {
+    //         console.log(data);
+    //         const json: json = JSON.parse(data);
+    //         this.roles = json.roles;
+    //     }
+    // }
 
-    writeDownDoomed(humanData: doomed) {
-        this.doomed = [...this.doomed, humanData];
-        fs.writeFileSync("./punishedUsers.json", JSON.stringify(this.doomed));
-    }
+    // writeDownDoomed(humanData: doomed) {
+    //     this.doomed = [...this.doomed, humanData];
+    //     fs.writeFileSync("./punishedUsers.json", JSON.stringify(this.doomed));
+    // }
 
-    saveRoles(savedRoles: any, user: any) {
-        fs.writeFileSync("./roles.json", JSON.stringify(savedRoles));
-        this.doomed = this.doomed.filter((o) => {
-            if (o.id != user.user.id) return user;
-        });
-        fs.writeFileSync("./punishedUsers.json", JSON.stringify(this.doomed));
-    }
+    // saveRoles(savedRoles: any, user: any) {
+    //     fs.writeFileSync("./roles.json", JSON.stringify(savedRoles));
+    //     this.doomed = this.doomed.filter((o) => {
+    //         if (o.id != user.user.id) return user;
+    //     });
+    //     fs.writeFileSync("./punishedUsers.json", JSON.stringify(this.doomed));
+    // }
 
-    checkRolesModyfication(roles: Array<string>, guild: discord.Guild): boolean {
-        return roles.some((role) => {
-            const roleObj: discord.Role = guild.roles.cache.find((r: discord.Role) => r.id == role);
-            console.log(roleObj.editable);
-            if (roleObj.editable == false && roleObj.name != "Server Booster") {
-                return true;
+    async checkRolesModyfication(
+        roles: Array<string>,
+        guild: discord.Guild,
+        message: discord.Message | discord.CommandInteraction,
+        member: discord.GuildMember
+    ): Promise<boolean> {
+        console.log(`members role ids list: `, roles);
+        const roleObj = await guild.roles.fetch();
+        return roleObj.some((role) => {
+            if (roles.includes(role.id)) {
+                console.log(`czy rola ${role.name} jest do educji: ${role.editable}`);
+                if (role.editable == false || role.name == "Server Booster") {
+                    console.log("role jest server booster albo nie jest edytowalna");
+                    message.reply(`cannot manipulate ${member} role: ${role}`);
+                    return true;
+                } else {
+                    console.log("role jest edytowalna - HURAAA!!!");
+                    return false;
+                }
             }
         });
     }
 
-    punishInit(Client: discord.Client, message: discord.Message, time: string) {
-        const users = message.mentions.users;
-        this.readDoomed(Client);
+    chechIfDoomed = async (clientID: string, guildID: string) => {
+        const user = await database.getUser(clientID, `${guildID}-punishedUsers`);
+        return user;
+    };
+
+    async punishInit(
+        message: discord.Message | discord.CommandInteraction,
+        punishmentRole: discord.Role | any,
+        member: discord.GuildMember | any,
+        time: string
+    ) {
         // Goes for every user on server and checks if user is still on server and if is alive
-        Client.guilds.cache.get(process.env.DISCORD_SERVER_ID).members.cache.forEach((member: discord.GuildMember) => {
-            this.user = member;
-            if (users.has(this.user!.user.id)) {
-                if (this.doomed.some((doomed: doomed) => doomed.id == this.user.user.id)) {
-                    console.log(`${this.user.user.username} już nie żyż`);
-                    message.channel.send(`${this.user.user.username} już nie żyż`);
-                    return this.user;
-                } else if (isNaN(parseInt(time.slice(0, -1))) == false && typeof time[time.length - 1] == "string") {
-                    // if time is a number and time extension is string
-                    if (
-                        this.checkRolesModyfication(
-                            this.user._roles,
-                            Client.guilds.cache.get(process.env.DISCORD_SERVER_ID)
-                        )
-                    ) {
-                        // checking role manipulation possibility
-                        message.channel.send(`Cannot manipulate ${member.user.username} role`);
-                        return false;
-                    } else this.punishByRole(Client, message, time, this.user);
+        const membersColelction = message.guild.members.fetch().then(async (members) => {
+            if (members.has(member.id)) {
+                const isDoomed = await this.chechIfDoomed(member.id, message.guild.id);
+                if (isDoomed != null) {
+                    console.log(`${this.user.user.username} is already being punished`);
+                    message.reply({
+                        content: `${member} is being punished at the moment`,
+                        ephemeral: true,
+                    });
                 } else {
-                    message.reply("invalid time");
                 }
+                //     } else if (isNaN(parseInt(time.slice(0, -1))) == false && typeof time[time.length - 1] == "string") {
+                //         // if time is a number and time extension is string
+                if (await this.checkRolesModyfication(member._roles, message.guild, message, member)) {
+                } else {
+                    // this.punishByRole();
+                    console.log("punish this man");
+                    message.reply(`punishing user - temp`);
+                }
+            } else {
+                console.log(`user not on server`);
             }
         });
     }
@@ -151,7 +172,7 @@ class lastJudgment {
             }
         });
         console.log(savedRoles);
-        this.saveRoles(savedRoles, user);
+        // this.saveRoles(savedRoles, user);
     }
 
     punishByRole(Client: discord.Client, message: discord.Message, time: string, user: any) {
@@ -168,7 +189,7 @@ class lastJudgment {
                         )
                     )
                     .then((afterAfterUser: any) => {
-                        this.writeDownDoomed(userData);
+                        // this.writeDownDoomed(userData);
                         const type: string = time.slice(-1);
                         const timeNum: number = parseInt(time.slice(0, -1));
                         const releasement: Moment = moment().add(timeNum, `${type}` as unitOfTime.DurationConstructor);

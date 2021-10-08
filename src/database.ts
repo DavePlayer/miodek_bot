@@ -1,3 +1,4 @@
+import { ReactionUserManager } from "discord.js";
 import { create } from "domain";
 import { InsertManyResult, ListDatabasesResult, MongoClient, ObjectId } from "mongodb";
 
@@ -82,13 +83,10 @@ class DatabaseC {
             console.log(error);
         }
     };
-    getUser = async (user: IUser, collectionName: string) => {
+    getUser = async (ClientId: string, collectionName: string) => {
         try {
             collectionName = await this.validateCollection(collectionName);
-            const gotUser = await this.client
-                .db("miodek")
-                .collection(collectionName)
-                .findOne({ ClientId: user.ClientId });
+            const gotUser = await this.client.db("miodek").collection(collectionName).findOne({ ClientId: ClientId });
             console.log(gotUser);
             return gotUser;
         } catch (error) {
@@ -103,7 +101,11 @@ class DatabaseC {
             const upsertedUser = await this.client
                 .db("miodek")
                 .collection(collectionName)
-                .updateOne({ ClientId: user.ClientId }, { $set: { rolesIds: user.rolesIds } }, { upsert: true });
+                .updateOne(
+                    { ClientId: user.ClientId },
+                    { $set: { name: user.name, rolesIds: user.rolesIds } },
+                    { upsert: true }
+                );
             console.log(`updated ${user.name}`);
         } catch (error) {
             console.log(error);

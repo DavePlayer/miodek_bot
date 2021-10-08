@@ -142,6 +142,30 @@ Client.on("ready", async () => {
         name: "fixconnection",
         description: "clear querry and destroy bot channel connection",
     });
+    commands.create({
+        name: "punish",
+        options: [
+            {
+                name: "role",
+                description: "punishment role which is going to be given",
+                required: true,
+                type: discord.Constants.ApplicationCommandOptionTypes.ROLE,
+            },
+            {
+                name: "user",
+                description: "user which should be punished",
+                required: true,
+                type: discord.Constants.ApplicationCommandOptionTypes.USER,
+            },
+            {
+                name: "time",
+                description: "time after which user should be released [liczba + format czasu]",
+                required: true,
+                type: discord.Constants.ApplicationCommandOptionTypes.STRING,
+            },
+        ],
+        description: "adds custom punishment role to user with timeout (will be deleted after given time)",
+    });
 });
 
 function matchArray(message: string, matcher: Array<RegExp>): boolean {
@@ -175,6 +199,13 @@ Client.on("interactionCreate", async (interaction) => {
         case "fixconnection":
             ytMeneger.fixConnection(interaction);
             break;
+        case "punish":
+            const punishmentRole = interaction.options.getRole("role");
+            const user = interaction.options.getMember("user");
+            const time = interaction.options.getString("time");
+            await lastJudgment.punishInit(interaction, punishmentRole, user, time);
+            // interaction.reply(`works`);
+            break;
     }
 });
 
@@ -196,7 +227,7 @@ Client.on("guildMemberAdd", (member: GuildMember | PartialGuildMember) => {
     //                 const roleObj: discord.Role = member.guild.roles.cache.find((r: discord.Role) => r.name == role);
     //                 if (!member.manageable || !roleObj.editable) {
     //                     console.log(
-    //                         `cannot manipulate role assigned for ${member.user.username}\n Here's his saved role: ${role}`
+    //                         `cannot manipulate role assigned for ${member.user.username}\t Here's his saved role: ${role}`
     //                     );
     //                     (Client.channels.cache.get(process.env.DISCORD_COMMAND_CHANNEL) as TextChannel).send(
     //                         `Cannot add role ${role} to user: ${member.user.username}`
@@ -212,7 +243,7 @@ Client.on("guildMemberAdd", (member: GuildMember | PartialGuildMember) => {
         ClientId: member.user.id,
         rolesIds: (member as INormalUser)._roles,
     };
-    Database.getUser(dataUser, member.guild.id).then((databaseUser) => {
+    Database.getUser(dataUser.ClientId, member.guild.id).then((databaseUser) => {
         databaseUser.rolesIds.map((roleId: string) => {
             member.roles.add(roleId);
         });
@@ -238,7 +269,7 @@ Client.on("messageCreate", (message: discord.Message): Awaited<any> => {
                 case command.includes("punish"):
                     const time = command.split(" ");
                     //lastJudgment.punishByRole(Client, message, time[time.length - 1])
-                    lastJudgment.punishInit(Client, message, time[time.length - 1]);
+                    // lastJudgment.punishInit(Client, message, time[time.length - 1]);
                     //Clock.addDynamicReminder({time: new Date(Date.now() + parseFloat(time[time.length - 1]) * 1000 * 60), func: () => console.log('punish that bitch') })
                     break;
                 case command.includes("play"):
@@ -324,7 +355,7 @@ Client.on("messageCreate", (message: discord.Message): Awaited<any> => {
                             },
                             {
                                 name: "BOT punish @user1 @user2 time+format",
-                                value: "dodaje rolę karną dla pingowanych użytkowników na określony czas\n formaty:\n y- lata\n M-miesiąc\nw-tygodnie\nd-dni\nh-godziny\nm-minuty\ns-sekundy\npolecane jest dawanie kar na więcej niż 2 minuty ze względu na timer który sprawdza czas co mitutę, więc dawanie na mniej spowoduje ukaranie użytkownika na zawsze",
+                                value: "dodaje rolę karną dla pingowanych użytkowników na określony czas\t formaty:\t y- lata\t M-miesiąc\tw-tygodnie\td-dni\th-godziny\tm-minuty\ts-sekundy\tpolecane jest dawanie kar na więcej niż 2 minuty ze względu na timer który sprawdza czas co mitutę, więc dawanie na mniej spowoduje ukaranie użytkownika na zawsze",
                             },
                             {
                                 name: "BOT play youtube_link/custom_words",
