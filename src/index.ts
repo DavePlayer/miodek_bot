@@ -12,6 +12,7 @@ import { user } from "./interfaces";
 import Clock from "./clock";
 import moment from "moment";
 import Database, { IUser } from "./database";
+import { CommandStartedEvent } from "mongodb";
 // import { cloneServer } from "./cloneServer";
 
 dotenv.config();
@@ -120,7 +121,7 @@ Client.on("ready", async () => {
         description: "testing command",
     });
     commands.create({
-        name: "play",
+        name: "play-yt-music",
         description: "Play YouTube Music from link or custom words",
         options: [
             {
@@ -132,7 +133,7 @@ Client.on("ready", async () => {
         ],
     });
     commands.create({
-        name: "showlist",
+        name: "show-‎list",
         description: "Show YouTube music querry",
     });
     commands.create({
@@ -140,7 +141,7 @@ Client.on("ready", async () => {
         description: "skip YouTube music",
     });
     commands.create({
-        name: "fixconnection",
+        name: "fix-connection",
         description: "clear querry and destroy bot channel connection",
     });
     commands.create({
@@ -167,6 +168,36 @@ Client.on("ready", async () => {
         ],
         description: "adds custom punishment role to user with timeout (will be deleted after given time)",
     });
+    commands.create({
+        name: "add-twitch-user",
+        options: [
+            {
+                name: "channel",
+                description: "Channel on which message should be sent",
+                required: true,
+                type: discord.Constants.ApplicationCommandOptionTypes.CHANNEL,
+            },
+            {
+                name: "twitch-channel-id",
+                description: "id of a twitch channel (instructions on github)",
+                required: true,
+                type: discord.Constants.ApplicationCommandOptionTypes.STRING,
+            },
+            {
+                name: "twitch-client-id",
+                description: "id of a twitch user (instructions on github)",
+                required: true,
+                type: discord.Constants.ApplicationCommandOptionTypes.STRING,
+            },
+            {
+                name: "twitch-token",
+                description: "token for twitch API veryfication (instructions on github)",
+                required: true,
+                type: discord.Constants.ApplicationCommandOptionTypes.STRING,
+            },
+        ],
+        description: "ads listener for custom twitch streamer",
+    });
 });
 
 function matchArray(message: string, matcher: Array<RegExp>): boolean {
@@ -191,13 +222,13 @@ Client.on("interactionCreate", async (interaction) => {
             const link = interaction.options.getString("name");
             ytMeneger.playMusic(interaction, link);
             break;
-        case "showlist":
+        case "show-list":
             ytMeneger.displayQuerry(interaction);
             break;
         case "skip":
             ytMeneger.skipSong(interaction);
             break;
-        case "fixconnection":
+        case "fix-connection":
             ytMeneger.fixConnection(interaction);
             break;
         case "punish":
@@ -206,6 +237,15 @@ Client.on("interactionCreate", async (interaction) => {
             const time = interaction.options.getString("time");
             await lastJudgment.punishInit(interaction, punishmentRole, user, time);
             // interaction.reply(`works`);
+            break;
+        case `add-twitch-user`:
+            const channel = interaction.options.getChannel("channel");
+            const twitchChannelId = interaction.options.getString("twitch-channel-id");
+            const twitchClientId = interaction.options.getString("twitch-client-id");
+            const twitchToken = interaction.options.getString("twitch-token");
+            console.log(channel);
+            console.log(twitchChannelId, twitchClientId, twitchToken);
+            interaction.reply("works");
             break;
     }
 });
