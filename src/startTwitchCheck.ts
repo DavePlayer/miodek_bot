@@ -10,7 +10,7 @@ class TwitchManagerC {
         this.remindedHourly = false;
     }
 
-    public async startTwitchCheck(Client: Client): Promise<(execTime: Moment) => Promise<any>> {
+    public async startTwitchCheck(Client: Client): Promise<(execTime: Moment) => any> {
         console.log("checking twitch status");
         const json = await fetch(
             `https://api.twitch.tv/kraken/streams/${process.env.TWITCH_CHANNEL_ID}?client_id=${process.env.TWITCH_CLIENT_ID}&token=${process.env.TWITCH_TOKEN}&api_version=5`
@@ -45,14 +45,14 @@ class TwitchManagerC {
             return (execTime: Moment) => {
                 const time = moment();
                 console.log(execTime.hour(), time.hour(), execTime.minute(), time.minute(), `------ not streaming`);
-                if (execTime.hour() == time.hour() && execTime.minute() == time.minute())
-                    try {
-                        return (Client.channels.cache.get(process.env.DISCORD_CHANNEL as string) as TextChannel).send(
-                            `@everyone ${process.env.TWITCH_USERNAME} dziś nie streamuje`
-                        );
-                    } catch {
-                        (err: Error) => console.log(err);
-                    }
+                // if (execTime.hour() == time.hour() && execTime.minute() == time.minute())
+                //     try {
+                //         return (Client.channels.cache.get(process.env.DISCORD_CHANNEL as string) as TextChannel).send(
+                //             `@everyone ${process.env.TWITCH_USERNAME} dziś nie streamuje`
+                //         );
+                //     } catch {
+                //         (err: Error) => console.log(err);
+                //     }
             };
         }
     }
