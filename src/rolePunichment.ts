@@ -88,14 +88,16 @@ class lastJudgment {
         if (isUserOnServer) {
             const doomedUser = await this.getDoomed(member.user.id, message.guild.id);
             // return user his roles
-            member.roles
-                .add(doomedUser.rolesIds)
-                .then((afterUser: discord.GuildMember) => {
-                    //after adding roles back, remove punishment role
-                    afterUser.roles.remove(punishmentRole).catch((err: discord.ErrorEvent) => console.log(err));
-                    return;
-                })
-                .catch((err: discord.ErrorEvent) => console.log(err));
+            if (doomedUser) {
+                member.roles
+                    .add(doomedUser.rolesIds)
+                    .then((afterUser: discord.GuildMember) => {
+                        //after adding roles back, remove punishment role
+                        afterUser.roles.remove(punishmentRole).catch((err: discord.ErrorEvent) => console.log(err));
+                        return;
+                    })
+                    .catch((err: discord.ErrorEvent) => console.log(err));
+            } else throw new Error("user is not doomed");
         } else {
             // edit database to give back roles
             await database.upsertUser(userData, message.guild.id);
@@ -117,34 +119,47 @@ class lastJudgment {
                 const releasement: Moment = moment().add(timeNum, `${type}` as unitOfTime.DurationConstructor);
                 const buttonRows = new discord.MessageActionRow().addComponents(
                     new discord.MessageButton({
-                        customId: "release",
+                        customId: `relase-${member.user.id}`,
                         label: "release",
                         style: "PRIMARY",
                     })
                 );
                 const collector = message.channel.createMessageComponentCollector({
-                    max: 1,
-                    time: releasement.seconds() - moment().seconds(),
+                    // max: 1,
+                    // time: releasement.valueOf() - moment().valueOf(),
                 });
                 collector.on("collect", (button) => {
-                    button.reply(`releasing user ${member} - temp not working`);
-                });
-                collector.on("end", async (collection) => {
-                    await (message as discord.CommandInteraction).editReply({
-                        content: `Person was released faster at: \`${moment().date()}-${
-                            moment().month() + 1
-                        }-${moment().year()} at ${moment().hour()}:${moment().minutes()}:${moment().seconds()}\``,
-                        components: [],
-                    });
+                    if (button.customId == `relase-${member.user.id}`) {
+                        Clock.removeDynamicReminder(`punishment-${member.user.id}`);
+                        this.releaseDoomed(member, message, punishmentRole, userData)
+                            .then(() => {
+                                (message as discord.CommandInteraction).editReply({
+                                    content: `Person was released faster at: \`${moment().date()}-${
+                                        moment().month() + 1
+                                    }-${moment().year()} at ${moment().hour()}:${moment().minutes()}:${moment().seconds()}\``,
+                                    components: [],
+                                });
+                            })
+                            .catch((err) => {
+                                console.log(err);
+                                button.reply({
+                                    content: `${err}`,
+                                    ephemeral: true,
+                                });
+                            });
+                    }
                 });
                 message.reply({
-                    content: `${member} is assigned ${punishmentRole}. Person shall be released: \`${releasement.date()}-${
-                        releasement.month() + 1
-                    }-${releasement.year()} at ${releasement.hour()}:${releasement.minutes()}:${releasement.seconds()}\``,
+                    content: `${member} is assigned ${punishmentRole}. Person shall be released: \`${releasement
+                        .add(1, "m")
+                        .date()}-${releasement.month() + 1}-${releasement.year()} at ${releasement.hour()}:${
+                        releasement.minutes() + 1
+                    }:${releasement.seconds()}\`\nbuttonId: relase-${member.user.id}`,
                     components: [buttonRows],
                 });
                 //setTimeout(() => this.releaseDoomed(afterAfterUser, Client), 1000 * parseInt(time))
                 Clock.addDynamicReminder({
+                    id: `punishment-${member.user.id}`,
                     time: releasement,
                     func: () => this.releaseDoomed(member, message, punishmentRole, userData),
                 });

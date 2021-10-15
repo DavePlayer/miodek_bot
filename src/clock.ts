@@ -29,6 +29,11 @@ class Clock {
         this.dynamicFuns = [...this.dynamicFuns, executable];
     }
 
+    removeDynamicReminder(id: string) {
+        console.log(`removing dunamic executable funxtion with id: ${id}`);
+        this.dynamicFuns = this.dynamicFuns.filter((exec: clockExecutable) => exec.id != id);
+    }
+
     startClock() {
         setInterval(async () => {
             this.currentTime = moment();
@@ -37,7 +42,7 @@ class Clock {
             this.staticTimeDependentFuns.map((exec: clockExecutable) => {
                 if (this.currentTime.hour() == exec.time.hour() && this.currentTime.minute() == exec.time.minute()) {
                     try {
-                        exec.func().then((res: (execTime: Moment) => Promise<any>) => res(exec.time));
+                        exec.func().then((res: (execTime: Moment) => Promise<any>) => res?.(exec.time));
                     } catch (error) {
                         console.log(error);
                     }
@@ -46,7 +51,7 @@ class Clock {
 
             this.staticTimeIndependentFuns.map((exec: clockExecutable) => {
                 try {
-                    exec.func().then((res: (execTime: Moment) => Promise<any>) => res(exec.time));
+                    exec.func().then((res?: (execTime: Moment) => Promise<any>) => res?.(exec.time));
                 } catch (error) {
                     console.log(error);
                 }
@@ -55,12 +60,12 @@ class Clock {
             this.dynamicFuns.filter((exec: clockExecutable) => {
                 this.currentTime.seconds(0).milliseconds(0);
                 exec.time.seconds(0).milliseconds(0);
-                if (this.currentTime.valueOf() == exec.time.valueOf()) {
+                if (this.currentTime.valueOf() >= exec.time.valueOf()) {
                     exec.func();
                     return false;
                 } else return true;
             });
-        }, 60000); // miliseconds 1000ml = 1s
+        }, 30000); // miliseconds 1000ml = 1s
     }
 }
 

@@ -44,7 +44,7 @@ class TwitchManagerC {
             console.log(`${process.env.TWITCH_USERNAME} is not streaming`);
             return (execTime: Moment) => {
                 const time = moment();
-                console.log(execTime.hour(), time.hour(), execTime.minute(), time.minute());
+                console.log(execTime.hour(), time.hour(), execTime.minute(), time.minute(), `------ not streaming`);
                 if (execTime.hour() == time.hour() && execTime.minute() == time.minute())
                     try {
                         return (Client.channels.cache.get(process.env.DISCORD_CHANNEL as string) as TextChannel).send(

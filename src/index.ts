@@ -69,6 +69,7 @@ Client.on("ready", async () => {
     try {
         //Clock.addStaticReminder({time: new Date(2021, 3, 30, 20, 29, 0, 0), func: () => startTwitchCheck(Client) })
         Clock.addStaticTimeIndependentReminder({
+            id: `twitchCheck-${123456789}(future-guild-id)`,
             time: moment("2021-04-06T19:00:00.000"),
             func: () => TwitchManager.startTwitchCheck(Client),
         });
