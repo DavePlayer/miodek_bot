@@ -126,7 +126,7 @@ Client.on("ready", async () => {
                 console.log(error);
             }
         });
-    const Guild: any = await Client.guilds.cache.get("898977782321795092");
+    const Guild: any = null; //await Client.guilds.cache.get("898977782321795092");
     let commands = null;
     if (Guild) {
         commands = Guild.commands;
