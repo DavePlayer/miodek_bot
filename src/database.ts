@@ -1,11 +1,19 @@
-import { ReactionUserManager } from "discord.js";
+import { OverwriteType, ReactionUserManager } from "discord.js";
 import { create } from "domain";
-import { InsertManyResult, ListDatabasesResult, MongoClient, ObjectId } from "mongodb";
+import { FindCursor, InsertManyResult, ListDatabasesResult, MongoClient, ObjectId } from "mongodb";
 
 export interface IUser {
     name: string;
     ClientId: string;
     rolesIds: Array<string>;
+}
+
+export interface ITwitchUser {
+    discordChannelId: string;
+    twitchChannelId: string;
+    twitchClientId: string;
+    twitchToken: string;
+    serverName: string;
 }
 
 class DatabaseC {
@@ -23,7 +31,6 @@ class DatabaseC {
             this.client = new MongoClient(this.mongoLink);
             try {
                 await this.client.connect();
-                // await this.listUsers();
             } catch (err) {
                 console.error(err);
             }
@@ -125,7 +132,7 @@ class DatabaseC {
         }
     };
 
-    resetDataBase = async (collectionName: string) => {
+    resetUserDataBase = async (collectionName: string) => {
         try {
             collectionName = await this.validateCollection(collectionName);
             const result = await this.client.db("miodek").collection(collectionName).deleteMany({});
@@ -136,7 +143,7 @@ class DatabaseC {
     };
 
     //remove users with no roles
-    purgeDatabase = async (user: IUser, collectionName: string) => {
+    purgeUserDatabase = async (user: IUser, collectionName: string) => {
         try {
             collectionName = await this.validateCollection(collectionName);
             const result = await this.client
@@ -149,6 +156,33 @@ class DatabaseC {
             console.log(`${result.deletedCount} users were purged`);
         } catch (error) {
             console.log(error);
+        }
+    };
+
+    insertTwitchUser = async (user: ITwitchUser) => {
+        try {
+            const collectionName = await this.validateCollection("twitch-users");
+            const result = await this.client.db("miodek").collection(collectionName).insertOne(user);
+            if (result == null) {
+                throw new Error(`couldn't insert user`);
+            } else return result;
+        } catch (error) {
+            throw error;
+        }
+    };
+    getTwitchUsers = async () => {
+        try {
+            const collectionName = await this.validateCollection("twitch-users");
+            const results = await this.client.db("miodek").collection(collectionName).find({});
+            if (results == null) {
+                throw new Error(`aha XD`);
+            } else {
+                const resultsData: unknown = await results.toArray();
+                if ((resultsData as Array<ITwitchUser>).length == 0) throw "no twitch users in database";
+                else return resultsData as Array<ITwitchUser>;
+            }
+        } catch (error) {
+            throw error;
         }
     };
 }

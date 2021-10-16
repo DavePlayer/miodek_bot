@@ -59,9 +59,7 @@ class Clock {
                 }
             });
 
-            this.dynamicFuns.filter((exec: clockExecutable) => {
-                this.currentTime.seconds(0).milliseconds(0);
-                exec.time.seconds(0).milliseconds(0);
+            this.dynamicFuns = this.dynamicFuns.filter((exec: clockExecutable) => {
                 if (this.currentTime.valueOf() >= exec.time.valueOf()) {
                     exec.func();
                     return false;

@@ -14,11 +14,13 @@ class lastJudgment {
     doomed: Array<doomed>;
     roles: Array<role>;
     user: any;
+    inmateNumber: number;
 
     constructor() {
         this.doomed = [];
         this.roles = [];
         this.user = null;
+        this.inmateNumber = 0;
     }
 
     async checkRolesModyfication(
@@ -52,6 +54,7 @@ class lastJudgment {
         time: string
     ) {
         // Goes for every user on server and checks if user is still on server and if is alive
+        this.inmateNumber += 1;
         message.guild.members.fetch().then(async (members) => {
             if (members.has(member.id)) {
                 const isDoomed = await this.getDoomed(member.id, message.guild.id);
@@ -64,7 +67,7 @@ class lastJudgment {
                 } else {
                     if (await this.checkRolesModyfication(member._roles, message.guild, message, member)) {
                     } else {
-                        this.punishByRole(message, time, member, punishmentRole);
+                        this.punishByRole(message, time, member, punishmentRole, this.inmateNumber);
                         // console.log("punish this man");
                         // message.reply(`punishing user - temp`);
                     }
@@ -83,35 +86,44 @@ class lastJudgment {
         userData: IUser
     ) {
         //checking if user is still on server
-        const allMembers = await message.guild.members.fetch();
-        const isUserOnServer = allMembers.has(member.user.id);
-        if (isUserOnServer) {
-            const doomedUser = await this.getDoomed(member.user.id, message.guild.id);
-            // return user his roles
-            if (doomedUser) {
-                member.roles
-                    .add(doomedUser.rolesIds)
-                    .then((afterUser: discord.GuildMember) => {
-                        //after adding roles back, remove punishment role
-                        afterUser.roles.remove(punishmentRole).catch((err: discord.ErrorEvent) => console.log(err));
-                        return;
-                    })
-                    .catch((err: discord.ErrorEvent) => console.log(err));
-            } else throw new Error("user is not doomed");
-        } else {
-            // edit database to give back roles
-            await database.upsertUser(userData, message.guild.id);
+        try {
+            const allMembers = await message.guild.members.fetch();
+            const isUserOnServer = allMembers.has(member.user.id);
+            if (isUserOnServer) {
+                const doomedUser = await this.getDoomed(member.user.id, message.guild.id);
+                // return user his roles
+                if (doomedUser) {
+                    member.roles
+                        .add(doomedUser.rolesIds)
+                        .then((afterUser: discord.GuildMember) => {
+                            //after adding roles back, remove punishment role
+                            afterUser.roles.remove(punishmentRole).catch((err: discord.ErrorEvent) => console.log(err));
+                            return;
+                        })
+                        .catch((err: discord.ErrorEvent) => console.log(err));
+                } else throw new Error("user is not doomed");
+            } else {
+                // edit database to give back roles
+                await database.upsertUser(userData, message.guild.id);
+            }
+            await database.removeUser(member.user.id, `${message.guild.id}-punishedUsers`);
+        } catch (error) {
+            console.log(error);
         }
-        await database.removeUser(member.user.id, `${message.guild.id}-punishedUsers`);
     }
 
     punishByRole(
         message: discord.Message | discord.CommandInteraction,
         time: string,
         member: discord.GuildMember & { _roles: Array<string> },
-        punishmentRole: discord.Role
+        punishmentRole: discord.Role,
+        inmateNum: number
     ) {
-        const userData: IUser = { name: member.user.username, ClientId: member.user.id, rolesIds: member._roles };
+        const userData: IUser = {
+            name: member.user.username,
+            ClientId: member.user.id,
+            rolesIds: member._roles,
+        };
         member.roles.remove(userData.rolesIds).then((lateruser: discord.GuildMember) => {
             lateruser.roles.add(punishmentRole).then((afterAfterUser: discord.GuildMember) => {
                 const type: string = time.slice(-1);
@@ -119,7 +131,7 @@ class lastJudgment {
                 const releasement: Moment = moment().add(timeNum, `${type}` as unitOfTime.DurationConstructor);
                 const buttonRows = new discord.MessageActionRow().addComponents(
                     new discord.MessageButton({
-                        customId: `relase-${member.user.id}`,
+                        customId: `relase-${member.user.id}-${inmateNum}`,
                         label: "release",
                         style: "PRIMARY",
                     })
@@ -128,33 +140,34 @@ class lastJudgment {
                     // max: 1,
                     // time: releasement.valueOf() - moment().valueOf(),
                 });
-                collector.on("collect", (button) => {
-                    if (button.customId == `relase-${member.user.id}`) {
-                        Clock.removeDynamicReminder(`punishment-${member.user.id}`);
-                        this.releaseDoomed(member, message, punishmentRole, userData)
-                            .then(() => {
-                                (message as discord.CommandInteraction).editReply({
-                                    content: `Person was released faster at: \`${moment().date()}-${
-                                        moment().month() + 1
-                                    }-${moment().year()} at ${moment().hour()}:${moment().minutes()}:${moment().seconds()}\``,
-                                    components: [],
+                collector.on("collect", async (button) => {
+                    if (button.customId == `relase-${member.user.id}-${inmateNum}`) {
+                        const Doomed = await this.getDoomed(member.user.id, member.guild.id);
+                        if (Doomed != null) {
+                            Clock.removeDynamicReminder(`punishment-${member.user.id}`);
+                            this.releaseDoomed(member, message, punishmentRole, userData)
+                                .then(() => {
+                                    (message as discord.CommandInteraction).editReply({
+                                        content: `Person was released faster at: \`${moment().date()}-${
+                                            moment().month() + 1
+                                        }-${moment().year()} at ${moment().hour()}:${moment().minutes()}:${moment().seconds()}\``,
+                                        components: [],
+                                    });
+                                })
+                                .catch((err) => {
+                                    console.log(err);
+                                    button.reply({
+                                        content: `${err}`,
+                                        ephemeral: true,
+                                    });
                                 });
-                            })
-                            .catch((err) => {
-                                console.log(err);
-                                button.reply({
-                                    content: `${err}`,
-                                    ephemeral: true,
-                                });
-                            });
+                        }
                     }
                 });
                 message.reply({
-                    content: `${member} is assigned ${punishmentRole}. Person shall be released: \`${releasement
-                        .add(1, "m")
-                        .date()}-${releasement.month() + 1}-${releasement.year()} at ${releasement.hour()}:${
-                        releasement.minutes() + 1
-                    }:${releasement.seconds()}\`\nbuttonId: relase-${member.user.id}`,
+                    content: `${member} is assigned ${punishmentRole}. Person shall be released: \`${releasement.date()}-${releasement.month()}-${releasement.year()} at ${releasement.hour()}:${releasement.minutes()}:${releasement.seconds()}\`\nbuttonId: relase-${
+                        member.user.id
+                    }`,
                     components: [buttonRows],
                 });
                 //setTimeout(() => this.releaseDoomed(afterAfterUser, Client), 1000 * parseInt(time))

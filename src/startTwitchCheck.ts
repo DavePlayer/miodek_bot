@@ -11,21 +11,23 @@ class TwitchManagerC {
     twitchClientId: string;
     twitchToken: string;
     serverName: string;
+    nickname: string;
 
     constructor(
         Client: discord.Client,
-        discordChannel: string,
+        discordChannelId: string,
         twitchChannelId: string,
         twitchClientId: string,
         twitchToken: string,
         serverName: string
     ) {
         this.remindedHourly = false;
-        this.discordChannel = discordChannel;
+        this.discordChannel = discordChannelId;
         (this.Client = Client), (this.twitchChannelId = twitchChannelId);
         this.twitchClientId = twitchClientId;
         this.twitchToken = twitchToken;
         this.serverName = serverName;
+        this.nickname = "unknown";
     }
 
     public async checkIfStreaming(): Promise<(execTime: Moment) => any> {
@@ -33,9 +35,16 @@ class TwitchManagerC {
             `https://api.twitch.tv/kraken/streams/${this.twitchChannelId}?client_id=${this.twitchClientId}&token=${this.twitchToken}&api_version=5`
         );
         const StreamData: any = await json.json();
+        const nicknameJson = await fetch(`https://api.twitch.tv/kraken/users/${this.twitchChannelId}`, {
+            headers: {
+                "Client-Id": process.env.TWITCH_CLIENT_ID,
+                Accept: "text/plainapplication/vnd.twitchtv.v5+json",
+            },
+        });
+        this.nickname = ((await nicknameJson.json()) as any).name;
         if (StreamData.stream) {
-            console.log(`${process.env.TWITCH_USERNAME} is streaming`);
             return (execTime: Moment) => {
+                console.log(`------------------ in cahnnel ${this.discordChannel} ----- ${this.nickname} is streaming`);
                 const embeded: discord.MessageEmbed = new discord.MessageEmbed()
                     .setTitle(`${StreamData.stream.channel.game} : ${StreamData.stream.channel.status}`)
                     .setColor(0xfa3c87)
@@ -53,8 +62,6 @@ class TwitchManagerC {
                     } catch (err) {
                         console.log(err);
                     }
-                } else {
-                    console.log(`checked streaming. Waiting still 5H interval`);
                 }
             };
         } else {
@@ -65,7 +72,7 @@ class TwitchManagerC {
                     time.hour(),
                     execTime.minute(),
                     time.minute(),
-                    `------${this.twitchClientId} not streaming`
+                    `------ in channel ${this.discordChannel} - ${this.nickname} not streaming`
                 );
                 // if (execTime.hour() == time.hour() && execTime.minute() == time.minute())
                 //     try {

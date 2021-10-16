@@ -1,4 +1,4 @@
-import discord, { Awaited, GuildMember, Intents, PartialGuildMember, TextChannel } from "discord.js";
+import discord, { Awaited, GuildMember, Intents, MessageEmbed, PartialGuildMember, TextChannel } from "discord.js";
 import express from "express";
 import "@babel/polyfill";
 import dotenv from "dotenv";
@@ -11,8 +11,11 @@ import ytMeneger from "./ytMusic";
 import { user } from "./interfaces";
 import Clock from "./clock";
 import moment from "moment";
-import Database, { IUser } from "./database";
+import Database, { ITwitchUser, IUser } from "./database";
 import { CommandStartedEvent } from "mongodb";
+import TwitchManagerC from "./startTwitchCheck";
+import node_fetch from "node-fetch";
+const fetch = node_fetch;
 // import { cloneServer } from "./cloneServer";
 
 dotenv.config();
@@ -89,36 +92,45 @@ Client.on("ready", async () => {
             ],
         });
     } catch (err) {
-        throw err;
+        console.log(err);
     }
 
-    const Guild = Client.guilds.cache.get(process.env.DISCORD_SERVER_ID);
     Database.establishConnection(process.env.MONGODB_STRING)
         .catch((err) => console.log(err))
-        .then(() => {
-            // Database.insertNewUser({
-            //     name: "test1",
-            //     ClientId: "21341234234",
-            //     rolesIds: ["312312"],
-            //     rolesNames: ["eeee makarena"],
-            // });
-            // Database.getUser(
-            //     {
-            //         name: "test1",
-            //         ClientId: "21341234234",
-            //         rolesIds: ["312312"],
-            //         rolesNames: ["eeee makarena"],
-            //     },
-            //     Guild.id
-            // );
-            // Database.validateCollection(Guild.id).then((name) => console.log(""));
+        .then(async () => {
+            // get twitch users and initialize stream listening
+            try {
+                const users = await Database.getTwitchUsers();
+                users.map((user) => {
+                    TwitchUserListeners.set(
+                        user.twitchChannelId + "-in-" + user.discordChannelId,
+                        new TwitchManagerC(
+                            Client,
+                            user.discordChannelId,
+                            user.twitchChannelId,
+                            user.twitchClientId,
+                            user.twitchToken,
+                            user.serverName
+                        )
+                    );
+                    Clock.addStaticTimeIndependentReminder({
+                        id: `user-twitch-check-${user.twitchChannelId}`,
+                        time: moment(),
+                        func: () =>
+                            TwitchUserListeners.get(
+                                user.twitchChannelId + "-in-" + user.discordChannelId
+                            ).checkIfStreaming(),
+                    });
+                });
+            } catch (error) {
+                console.log(error);
+            }
         });
+    const Guild: any = await Client.guilds.cache.get("898977782321795092");
     let commands = null;
     if (Guild) {
         commands = Guild.commands;
     } else commands = Client.application.commands;
-
-    console.log(discord.Constants.ApplicationCommandOptionTypes.STRING);
 
     commands.create({
         name: "test",
@@ -183,24 +195,24 @@ Client.on("ready", async () => {
             },
             {
                 name: "twitch-channel-id",
-                description: "id of a twitch channel (instructions on github)",
-                required: true,
-                type: discord.Constants.ApplicationCommandOptionTypes.STRING,
-            },
-            {
-                name: "twitch-client-id",
-                description: "id of a twitch user (instructions on github)",
-                required: true,
-                type: discord.Constants.ApplicationCommandOptionTypes.STRING,
-            },
-            {
-                name: "twitch-token",
-                description: "token for twitch API veryfication (instructions on github)",
+                description: "ID of a twitch channel (/get-twitch-data)",
                 required: true,
                 type: discord.Constants.ApplicationCommandOptionTypes.STRING,
             },
         ],
         description: "ads listener for custom twitch streamer",
+    });
+    commands.create({
+        name: "get-twitch-data",
+        options: [
+            {
+                name: "login",
+                description: "twitch user login",
+                required: true,
+                type: discord.Constants.ApplicationCommandOptionTypes.STRING,
+            },
+        ],
+        description: "get user data from twitch (necessary for adding stream listening)",
     });
 });
 
@@ -242,27 +254,86 @@ Client.on("interactionCreate", async (interaction) => {
             await lastJudgment.punishInit(interaction, punishmentRole, user, time);
             // interaction.reply(`works`);
             break;
+        case `get-twitch-data`:
+            try {
+                const nickname = interaction.options.getString("login");
+                const json = await fetch(`https://api.twitch.tv/kraken/users?login=${nickname}&api_version=5`, {
+                    headers: { "Client-Id": process.env.TWITCH_CLIENT_ID },
+                });
+                const StreamData: any = await json.json();
+                if (StreamData.users && StreamData.users.length > 0) {
+                    const embeds = StreamData.users.map((user: any) => {
+                        return new MessageEmbed({
+                            color: "#f00",
+                            title: `user info`,
+                        })
+                            .setAuthor(user.name, user.logo)
+                            .setDescription(`id: ${user._id}`)
+                            .addField(`description:`, user.bio || "null");
+                    });
+                    // interaction.reply(`\`\`\`json\n ${JSON.stringify(StreamData.users, null, 2)} \n\`\`\``);
+                    interaction.reply({
+                        embeds: embeds,
+                    });
+                } else {
+                    interaction.reply(`no user found`);
+                }
+            } catch (error) {
+                console.log(error);
+                interaction.reply(`sth went wrong`);
+            }
+            break;
         case `add-twitch-user`:
-            const discordChannel = interaction.options.getChannel("channel");
+            const discordChannelId = interaction.options.getChannel("channel").id;
             const twitchChannelId = interaction.options.getString("twitch-channel-id");
-            const twitchClientId = interaction.options.getString("twitch-client-id");
-            const twitchToken = interaction.options.getString("twitch-token");
+            const twitchClientId = process.env.TWITCH_CLIENT_ID;
+            const twitchToken = process.env.TWITCH_TOKEN;
+            const serverName = interaction.guild.name;
+
+            // check if user is not already in stream listener list
+            console.log(twitchChannelId);
+            if (TwitchUserListeners.has(twitchChannelId)) {
+                interaction.reply(`user is already spied on`);
+                break;
+            }
+
+            //check if api keys are ok
+            try {
+                const json = await fetch(
+                    `https://api.twitch.tv/kraken/streams/${twitchChannelId}?client_id=${twitchClientId}&token=${twitchToken}&api_version=5`
+                );
+                const StreamData: any = await json.json();
+                if (StreamData.error) {
+                    interaction.reply(`error: ${StreamData.message}`);
+                    break;
+                }
+            } catch (error) {
+                throw error;
+            }
+
+            // add twitchUserListener to list (for future checkout)
             TwitchUserListeners.set(
-                twitchClientId,
-                new twitchManagerC(
-                    Client,
-                    discordChannel.id,
-                    twitchChannelId,
-                    twitchClientId,
-                    twitchToken,
-                    interaction.guild.name
-                )
+                twitchChannelId + "-in-" + discordChannelId,
+                new twitchManagerC(Client, discordChannelId, twitchChannelId, twitchClientId, twitchToken, serverName)
             );
+
+            // add check user stream status function to clock for listening
             Clock.addStaticTimeIndependentReminder({
-                id: `user-twitch-check-${twitchChannelId}`,
+                id: `user-twitch-check-${twitchChannelId}+${serverName}`,
                 time: moment(),
-                func: () => TwitchUserListeners.get(twitchClientId).checkIfStreaming(),
+                func: () => TwitchUserListeners.get(twitchChannelId + "-in-" + discordChannelId).checkIfStreaming(),
             });
+
+            //save user in database
+            Database.insertTwitchUser({
+                discordChannelId,
+                serverName,
+                twitchChannelId,
+                twitchClientId,
+                twitchToken,
+            });
+
+            // give back status answer
             interaction.reply({
                 content: "added user for stream reminder listening",
                 ephemeral: true,
@@ -305,11 +376,13 @@ Client.on("guildMemberAdd", (member: GuildMember | PartialGuildMember) => {
         ClientId: member.user.id,
         rolesIds: (member as INormalUser)._roles,
     };
-    Database.getUser(dataUser.ClientId, member.guild.id).then((databaseUser) => {
-        databaseUser.rolesIds.map((roleId: string) => {
-            member.roles.add(roleId);
-        });
-    });
+    Database.getUser(dataUser.ClientId, member.guild.id)
+        .then((databaseUser) => {
+            databaseUser.rolesIds.map((roleId: string) => {
+                member.roles.add(roleId);
+            });
+        })
+        .catch((err) => console.log(err));
 });
 
 Client.on("messageCreate", (message: discord.Message): Awaited<any> => {

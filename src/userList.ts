@@ -50,7 +50,7 @@ class userDB {
                         ];
                 });
                 console.log("mapped users: ", mapedUsers);
-                Database.resetDataBase(message.guild.id).then(() =>
+                Database.resetUserDataBase(message.guild.id).then(() =>
                     Database.insertNewUsers(mapedUsers, message.guild.id)
                 );
             });
