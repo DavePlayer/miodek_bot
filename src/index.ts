@@ -3,7 +3,7 @@ import express from "express";
 import "@babel/polyfill";
 import dotenv from "dotenv";
 import userDB, { INormalUser } from "./userList";
-import { TwitchManager } from "./startTwitchCheck";
+import twitchManagerC from "./startTwitchCheck";
 import { welcomeUser } from "./welcomeUser";
 import lastJudgment from "./rolePunichment";
 import fs from "fs";
@@ -33,6 +33,8 @@ app.use(express.json() as express.RequestHandler);
 const getFileJson = () => {
     return JSON.parse(fs.readFileSync("./roles.json", "utf-8"));
 };
+
+const TwitchUserListeners = new Map<string, twitchManagerC>([]);
 
 app.post("/send", (req: express.Request, res: express.Response) => {
     console.log(req.body);
@@ -72,7 +74,9 @@ Client.on("ready", async () => {
         Clock.addStaticTimeIndependentReminder({
             id: `twitchCheck-${123456789}(future-guild-id)`,
             time: moment("2021-04-06T19:00:00.000"),
-            func: () => TwitchManager.startTwitchCheck(Client),
+            func: () =>
+                //TwitchManager.startTwitchCheck(Client),
+                console.log("twitch check"),
         });
         Clock.startClock();
         Client.user?.setPresence({
@@ -239,13 +243,30 @@ Client.on("interactionCreate", async (interaction) => {
             // interaction.reply(`works`);
             break;
         case `add-twitch-user`:
-            const channel = interaction.options.getChannel("channel");
+            const discordChannel = interaction.options.getChannel("channel");
             const twitchChannelId = interaction.options.getString("twitch-channel-id");
             const twitchClientId = interaction.options.getString("twitch-client-id");
             const twitchToken = interaction.options.getString("twitch-token");
-            console.log(channel);
-            console.log(twitchChannelId, twitchClientId, twitchToken);
-            interaction.reply("works");
+            TwitchUserListeners.set(
+                twitchClientId,
+                new twitchManagerC(
+                    Client,
+                    discordChannel.id,
+                    twitchChannelId,
+                    twitchClientId,
+                    twitchToken,
+                    interaction.guild.name
+                )
+            );
+            Clock.addStaticTimeIndependentReminder({
+                id: `user-twitch-check-${twitchChannelId}`,
+                time: moment(),
+                func: () => TwitchUserListeners.get(twitchClientId).checkIfStreaming(),
+            });
+            interaction.reply({
+                content: "added user for stream reminder listening",
+                ephemeral: true,
+            });
             break;
     }
 });

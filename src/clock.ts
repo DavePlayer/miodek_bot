@@ -21,7 +21,7 @@ class Clock {
     }
     addStaticTimeIndependentReminder(executable: clockExecutable) {
         console.log("added static time independent executable function:", executable.time.toString());
-        this.staticTimeIndependentFuns = [...this.staticTimeDependentFuns, executable];
+        this.staticTimeIndependentFuns = [...this.staticTimeIndependentFuns, executable];
     }
 
     addDynamicReminder(executable: clockExecutable) {
@@ -40,9 +40,11 @@ class Clock {
             console.log(this.currentTime.toString());
 
             this.staticTimeDependentFuns.map((exec: clockExecutable) => {
-                if (this.currentTime.hour() == exec.time.hour() && this.currentTime.minute() == exec.time.minute()) {
+                if (this.currentTime.valueOf() >= exec.time.valueOf()) {
                     try {
-                        exec.func().then((res: (execTime: Moment) => Promise<any>) => res?.(exec.time));
+                        Promise.resolve(exec.func()).then((res: (execTime: Moment) => Promise<any>) =>
+                            res?.(exec.time)
+                        );
                     } catch (error) {
                         console.log(error);
                     }
@@ -51,7 +53,7 @@ class Clock {
 
             this.staticTimeIndependentFuns.map((exec: clockExecutable) => {
                 try {
-                    exec.func().then((res?: (execTime: Moment) => Promise<any>) => res?.(exec.time));
+                    Promise.resolve(exec.func()).then((res?: (execTime: Moment) => Promise<any>) => res?.(exec.time));
                 } catch (error) {
                     console.log(error);
                 }
@@ -65,7 +67,7 @@ class Clock {
                     return false;
                 } else return true;
             });
-        }, 30000); // miliseconds 1000ml = 1s
+        }, 10000); // miliseconds 1000ml = 1s
     }
 }
 

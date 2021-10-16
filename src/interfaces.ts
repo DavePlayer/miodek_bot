@@ -20,7 +20,7 @@ interface json {
 interface clockExecutable {
     id: string;
     time: Moment;
-    func: Function;
+    func: () => any;
 }
 
 interface doomed {
