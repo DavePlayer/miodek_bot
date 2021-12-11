@@ -257,19 +257,19 @@ Client.on("interactionCreate", async (interaction) => {
         case `get-twitch-data`:
             try {
                 const nickname = interaction.options.getString("login");
-                const json = await fetch(`https://api.twitch.tv/kraken/users?login=${nickname}&api_version=5`, {
-                    headers: { "Client-Id": process.env.TWITCH_CLIENT_ID },
+                const json = await fetch(`https://api.twitch.tv/helix/users?login=${nickname}`, {
+                    headers: { "Client-Id": process.env.TWITCH_CLIENT_ID, 'Authorization': `Bearer ${process.env.TWITCH_TOKEN}` },
                 });
                 const StreamData: any = await json.json();
-                if (StreamData.users && StreamData.users.length > 0) {
-                    const embeds = StreamData.users.map((user: any) => {
+                if (StreamData.data && StreamData.data.length > 0) {
+                    const embeds = StreamData.data.map((user: any) => {
                         return new MessageEmbed({
                             color: "#f00",
                             title: `user info`,
                         })
-                            .setAuthor(user.name, user.logo)
-                            .setDescription(`id: ${user._id}`)
-                            .addField(`description:`, user.bio || "null");
+                            .setAuthor(user.display_name, user.profile_image_url)
+                            .setDescription(`id: ${user.id}`)
+                            .addField(`description:`, user.description || "null");
                     });
                     // interaction.reply(`\`\`\`json\n ${JSON.stringify(StreamData.users, null, 2)} \n\`\`\``);
                     interaction.reply({
@@ -300,7 +300,10 @@ Client.on("interactionCreate", async (interaction) => {
             //check if api keys are ok
             try {
                 const json = await fetch(
-                    `https://api.twitch.tv/kraken/streams/${twitchChannelId}?client_id=${twitchClientId}&token=${twitchToken}&api_version=5`
+                    `https://api.twitch.tv/helix/streams?user_id=${twitchChannelId}`,
+                    {
+                        headers: { "Client-Id": process.env.TWITCH_CLIENT_ID, 'Authorization': `Bearer ${process.env.TWITCH_TOKEN}` },
+                    }
                 );
                 const StreamData: any = await json.json();
                 if (StreamData.error) {

@@ -32,31 +32,31 @@ class TwitchManagerC {
 
     public async checkIfStreaming(): Promise<(execTime: Moment) => any> {
         const json = await fetch(
-            `https://api.twitch.tv/kraken/streams/${this.twitchChannelId}?client_id=${this.twitchClientId}&token=${this.twitchToken}&api_version=5`
+            `https://api.twitch.tv/helix/streams?user_id=${this.twitchChannelId}`,
+            {
+                headers: { "Client-Id": process.env.TWITCH_CLIENT_ID, 'Authorization': `Bearer ${process.env.TWITCH_TOKEN}` },
+            }
         );
         const StreamData: any = await json.json();
-        const nicknameJson = await fetch(`https://api.twitch.tv/kraken/users/${this.twitchChannelId}`, {
-            headers: {
-                "Client-Id": process.env.TWITCH_CLIENT_ID,
-                Accept: "text/plainapplication/vnd.twitchtv.v5+json",
-            },
-        });
-        this.nickname = ((await nicknameJson.json()) as any).name;
-        if (StreamData.stream) {
+        if (StreamData.data) {
+            StreamData.data = StreamData.data[0]
+            this.nickname = StreamData.data.user_name;
+            let thumbnail = StreamData.data.thumbnail_url.replace('{width}', '1280')
+            thumbnail = thumbnail.replace('{height}', '720')
             return (execTime: Moment) => {
                 console.log(`------------------ in cahnnel ${this.discordChannel} ----- ${this.nickname} is streaming`);
                 const embeded: discord.MessageEmbed = new discord.MessageEmbed()
-                    .setTitle(`${StreamData.stream.channel.game} : ${StreamData.stream.channel.status}`)
+                    .setTitle(`${StreamData.data.game_name} : ${StreamData.data.title}`)
                     .setColor(0xfa3c87)
-                    .setURL(`${StreamData.stream.channel.url}`)
+                    .setURL(`https://twitch.tv/${StreamData.data.user_login}`)
 
-                    .setImage(`${StreamData.stream.preview.large}`);
+                    .setImage(`${thumbnail}`);
                 if (this.remindedHourly == false) {
                     this.remindedHourly = true;
                     setTimeout(async () => (this.remindedHourly = false), 1000 * 60 * 60 * 5);
                     try {
                         return (this.Client.channels.cache.get(this.discordChannel) as TextChannel).send({
-                            content: `@everyone ${StreamData.stream.channel.display_name} teraz streamuje`,
+                            content: `@everyone ${StreamData.data.user_name} teraz streamuje`,
                             embeds: [embeded],
                         });
                     } catch (err) {
