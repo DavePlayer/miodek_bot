@@ -32,7 +32,7 @@ class lastJudgment {
         const roleObj = await guild.roles.fetch();
         return roleObj.some((role) => {
             if (roles.includes(role.id)) {
-                if (role.editable == false || role.name == "Server Booster") {
+                if (role.editable == false && role.name != "Server Booster") {
                     message.reply(`cannot manipulate ${member} role: ${role}`);
                     return true;
                 } else {
@@ -112,17 +112,18 @@ class lastJudgment {
         }
     }
 
-    punishByRole(
+    async punishByRole(
         message: discord.Message | discord.CommandInteraction,
         time: string,
         member: discord.GuildMember & { _roles: Array<string> },
         punishmentRole: discord.Role,
         inmateNum: number
     ) {
+        const nitroBustRole = await member.guild.roles.cache.find((role) => role.name == 'Server Booster')
         const userData: IUser = {
             name: member.user.username,
             ClientId: member.user.id,
-            rolesIds: member._roles,
+            rolesIds: member._roles.filter(role => role != nitroBustRole.id),
         };
         member.roles.remove(userData.rolesIds).then((lateruser: discord.GuildMember) => {
             lateruser.roles.add(punishmentRole).then((afterAfterUser: discord.GuildMember) => {
