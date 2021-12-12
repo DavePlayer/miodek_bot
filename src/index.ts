@@ -72,6 +72,14 @@ app.post("/send", (req: express.Request, res: express.Response) => {
 });
 
 Client.on("ready", async () => {
+    console.log(`                                                                        
+######   ##   #####  #      #  ####  # ######    #    # #    # # ###### 
+    #   #  #  #    # #      # #    # # #         ##  ## ##   # # #      
+   #   #    # #####  #      # #      # #####     # ## # # #  # # #####  
+  #    ###### #    # #      # #      # #         #    # #  # # # #      
+ #     #    # #    # # #    # #    # # #         #    # #   ## # #      
+###### #    # #####  #  ####   ####  # ######    #    # #    # # ###### 
+    `);
     try {
         //Clock.addStaticReminder({time: new Date(2021, 3, 30, 20, 29, 0, 0), func: () => startTwitchCheck(Client) })
         Clock.addStaticTimeIndependentReminder({
@@ -149,7 +157,7 @@ Client.on("ready", async () => {
         ],
     });
     commands.create({
-        name: "show-‎list",
+        name: "show-list",
         description: "Show YouTube music querry",
     });
     commands.create({
@@ -258,7 +266,10 @@ Client.on("interactionCreate", async (interaction) => {
             try {
                 const nickname = interaction.options.getString("login");
                 const json = await fetch(`https://api.twitch.tv/helix/users?login=${nickname}`, {
-                    headers: { "Client-Id": process.env.TWITCH_CLIENT_ID, 'Authorization': `Bearer ${process.env.TWITCH_TOKEN}` },
+                    headers: {
+                        "Client-Id": process.env.TWITCH_CLIENT_ID,
+                        Authorization: `Bearer ${process.env.TWITCH_TOKEN}`,
+                    },
                 });
                 const StreamData: any = await json.json();
                 if (StreamData.data && StreamData.data.length > 0) {
@@ -299,12 +310,12 @@ Client.on("interactionCreate", async (interaction) => {
 
             //check if api keys are ok
             try {
-                const json = await fetch(
-                    `https://api.twitch.tv/helix/streams?user_id=${twitchChannelId}`,
-                    {
-                        headers: { "Client-Id": process.env.TWITCH_CLIENT_ID, 'Authorization': `Bearer ${process.env.TWITCH_TOKEN}` },
-                    }
-                );
+                const json = await fetch(`https://api.twitch.tv/helix/streams?user_id=${twitchChannelId}`, {
+                    headers: {
+                        "Client-Id": process.env.TWITCH_CLIENT_ID,
+                        Authorization: `Bearer ${process.env.TWITCH_TOKEN}`,
+                    },
+                });
                 const StreamData: any = await json.json();
                 if (StreamData.error) {
                     interaction.reply(`error: ${StreamData.message}`);
@@ -317,7 +328,15 @@ Client.on("interactionCreate", async (interaction) => {
             // add twitchUserListener to list (for future checkout)
             TwitchUserListeners.set(
                 twitchChannelId + "-in-" + discordChannelId,
-                new twitchManagerC(Client, discordChannelId, twitchChannelId, twitchClientId, twitchToken, serverName)
+                new twitchManagerC(
+                    Client,
+                    discordChannelId,
+                    twitchChannelId,
+                    twitchClientId,
+                    twitchToken,
+                    serverName,
+                    interaction
+                )
             );
 
             // add check user stream status function to clock for listening
@@ -330,10 +349,10 @@ Client.on("interactionCreate", async (interaction) => {
             //save user in database
             Database.insertTwitchUser({
                 discordChannelId,
-                serverName,
                 twitchChannelId,
                 twitchClientId,
                 twitchToken,
+                serverName,
             });
 
             // give back status answer

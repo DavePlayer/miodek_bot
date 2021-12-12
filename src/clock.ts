@@ -16,21 +16,21 @@ class Clock {
     }
 
     addStaticTimeDependentReminder(executable: clockExecutable) {
-        console.log("added static time independent executable function:", executable.time.toString());
+        console.log("Clock: added static time independent executable function:", executable.time.toString());
         this.staticTimeDependentFuns = [...this.staticTimeDependentFuns, executable];
     }
     addStaticTimeIndependentReminder(executable: clockExecutable) {
-        console.log("added static time independent executable function:", executable.time.toString());
+        console.log("Clock: added static time independent executable function:", executable.time.toString());
         this.staticTimeIndependentFuns = [...this.staticTimeIndependentFuns, executable];
     }
 
     addDynamicReminder(executable: clockExecutable) {
-        console.log("added dynamic executable function");
+        console.log("Clock: added dynamic executable function");
         this.dynamicFuns = [...this.dynamicFuns, executable];
     }
 
     removeDynamicReminder(id: string) {
-        console.log(`removing dunamic executable funxtion with id: ${id}`);
+        console.log(`Clock: removing dunamic executable funxtion with id: ${id}`);
         this.dynamicFuns = this.dynamicFuns.filter((exec: clockExecutable) => exec.id != id);
     }
 

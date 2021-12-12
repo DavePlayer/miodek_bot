@@ -32,7 +32,7 @@ class DatabaseC {
             try {
                 await this.client.connect();
             } catch (err) {
-                console.error(err);
+                console.error(`Database: \n${err}`);
             }
         }
     };
@@ -49,12 +49,12 @@ class DatabaseC {
                                 .db("miodek")
                                 .createCollection(collectionName)
                                 .then(() => {
-                                    console.log(`collection ${collectionName} created`);
+                                    console.log(`Database: collection ${collectionName} created`);
                                     res(collectionName);
                                 })
                                 .catch((err) => rej(err));
                         } else {
-                            console.log(`collection ${collectionName} exists`);
+                            console.log(`Database: collection ${collectionName} exists`);
                             res(collectionName);
                         }
                     } else {
@@ -73,7 +73,7 @@ class DatabaseC {
         try {
             collectionName = await this.validateCollection(collectionName);
             await this.client.db("miodek").collection(collectionName).insertOne(user);
-            console.log(`new user created: ${user.name}`);
+            console.log(`Database: new user created: ${user.name}`);
         } catch (error) {
             console.log(error);
         }
@@ -85,7 +85,7 @@ class DatabaseC {
                 .db("miodek")
                 .collection(collectionName)
                 .insertMany(users, { ordered: false });
-            console.log(`${results.insertedCount} users were created`);
+            console.log(`Database: ${results.insertedCount} users were created`);
         } catch (error) {
             console.log(error);
         }
@@ -126,7 +126,7 @@ class DatabaseC {
                     { $set: { name: user.name, rolesIds: user.rolesIds } },
                     { upsert: true }
                 );
-            console.log(`updated ${user.name}`);
+            console.log(`Database: updated ${user.name}`);
         } catch (error) {
             console.log(error);
         }
@@ -136,7 +136,7 @@ class DatabaseC {
         try {
             collectionName = await this.validateCollection(collectionName);
             const result = await this.client.db("miodek").collection(collectionName).deleteMany({});
-            console.log(`removed ${result.deletedCount} documents`);
+            console.log(`Database: removed ${result.deletedCount} documents`);
         } catch (error) {
             console.log(error);
         }
@@ -153,7 +153,7 @@ class DatabaseC {
                     rolesIds: { $e: 0 },
                     rolesNames: { $e: 0 },
                 });
-            console.log(`${result.deletedCount} users were purged`);
+            console.log(`Database: ${result.deletedCount} users were purged`);
         } catch (error) {
             console.log(error);
         }
@@ -164,7 +164,7 @@ class DatabaseC {
             const collectionName = await this.validateCollection("twitch-users");
             const result = await this.client.db("miodek").collection(collectionName).insertOne(user);
             if (result == null) {
-                throw new Error(`couldn't insert user`);
+                throw new Error(`Database: couldn't insert user`);
             } else return result;
         } catch (error) {
             throw error;
@@ -178,7 +178,7 @@ class DatabaseC {
                 throw new Error(`aha XD`);
             } else {
                 const resultsData: unknown = await results.toArray();
-                if ((resultsData as Array<ITwitchUser>).length == 0) throw "no twitch users in database";
+                if ((resultsData as Array<ITwitchUser>).length == 0) throw "Database: no twitch users in database";
                 else return resultsData as Array<ITwitchUser>;
             }
         } catch (error) {
