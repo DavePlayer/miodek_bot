@@ -134,7 +134,8 @@ Client.on("ready", async () => {
                 console.log(error);
             }
         });
-    const Guild: any = null; //await Client.guilds.cache.get("898977782321795092");
+    let Guild: any = null;
+    // Guild = await Client.guilds.cache.get("898977782321795092");
     let commands = null;
     if (Guild) {
         commands = Guild.commands;
@@ -242,7 +243,7 @@ Client.on("interactionCreate", async (interaction) => {
                 // ^ only you can see this
             });
             break;
-        case "play":
+        case "play-yt-music":
             const link = interaction.options.getString("name");
             ytMeneger.playMusic(interaction, link);
             break;
@@ -370,8 +371,8 @@ Client.on("guildMemberUpdate", (oldMember: GuildMember | PartialGuildMember, new
 });
 
 Client.on("guildMemberAdd", (member: GuildMember | PartialGuildMember) => {
-    console.log("welcoming user");
-    welcomeUser(member);
+    // console.log("welcoming user");
+    // welcomeUser(member);
     // member.roles.add(member.guild.roles.cache.find(r => r.name == 'debil'))
 
     // user roles validation and assignment
