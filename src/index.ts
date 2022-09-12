@@ -108,14 +108,14 @@ Client.on("ready", async () => {
                             user.serverName
                         )
                     );
-                    // Clock.addStaticTimeIndependentReminder({
-                    //     id: `user-twitch-check-${user.twitchChannelId}`,
-                    //     time: moment(),
-                    //     func: () =>
-                    //         TwitchUserListeners.get(
-                    //             user.twitchChannelId + "-in-" + user.discordChannelId
-                    //         ).checkIfStreaming(),
-                    // });
+                    Clock.addStaticTimeIndependentReminder({
+                        id: `user-twitch-check-${user.twitchChannelId}`,
+                        time: moment(),
+                        func: () =>
+                            TwitchUserListeners.get(
+                                user.twitchChannelId + "-in-" + user.discordChannelId
+                            ).checkIfStreaming(),
+                    });
                 });
             } catch (error) {
                 console.log(error);
