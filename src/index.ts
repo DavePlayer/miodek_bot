@@ -45,37 +45,6 @@ const GetTwitchAppOauth = async () => {
     return resToken.access_token
 }
 
-app.post("/send", (req: express.Request, res: express.Response) => {
-    console.log(req.body);
-    // http post body structure
-    //{
-    //"type": "sendMessage",
-    //"channel": "bot",
-    //"channelId": 1234567890,
-    //"message": "just message"
-    //}
-    if (req.body.type == "sendMessage" && req.body.channel.length > 0 && req.body.channelId) {
-        switch (req.body.channel) {
-            case "bot":
-                (Client.channels.cache.get(process!.env!.DISCORD_COMMAND_CHANNEL || "") as TextChannel).send(
-                    req.body.message
-                );
-                break;
-            case "info-social":
-                (Client.channels.cache.get(process.env.DISCORD_CHANNEL || "") as TextChannel).send(req.body.message);
-                break;
-            case "ogolny":
-                (Client.channels.cache.get(process.env.DISCORD_MAIN_CHANNEL || "") as TextChannel).send(
-                    req.body.message
-                );
-                break;
-            default:
-                (Client.channels.cache.get(req.body.channelId) as TextChannel).send(req.body.message);
-                break;
-        }
-    }
-    res.send({ stsus: "working" });
-});
 
 Client.on("ready", async () => {
     console.log(`                                                                        
@@ -86,6 +55,20 @@ Client.on("ready", async () => {
  #     #    # #    # # #    # #    # # #         #    # #   ## # #      
 ###### #    # #####  #  ####   ####  # ######    #    # #    # # ###### 
     `);
+    app.post("/send", async (req: express.Request, res: express.Response) => {
+        console.log(req.body);
+        // http post body structure
+        //{
+        //"type": "sendMessage",
+        //"channelId": 1234567890,
+        //"message": "just message"
+        //}
+        if (req.body.type == "sendMessage" && req.body.channel.length > 0 && req.body.channelId) {
+            const channel = await Client.channels.fetch(`${req.body.channelId}`) as TextChannel
+            channel.send(req.body.message);
+        }
+        res.send({ stsus: "working" });
+    });
     try {
         // start function execution clock
         Clock.startClock();
@@ -125,14 +108,14 @@ Client.on("ready", async () => {
                             user.serverName
                         )
                     );
-                    Clock.addStaticTimeIndependentReminder({
-                        id: `user-twitch-check-${user.twitchChannelId}`,
-                        time: moment(),
-                        func: () =>
-                            TwitchUserListeners.get(
-                                user.twitchChannelId + "-in-" + user.discordChannelId
-                            ).checkIfStreaming(),
-                    });
+                    // Clock.addStaticTimeIndependentReminder({
+                    //     id: `user-twitch-check-${user.twitchChannelId}`,
+                    //     time: moment(),
+                    //     func: () =>
+                    //         TwitchUserListeners.get(
+                    //             user.twitchChannelId + "-in-" + user.discordChannelId
+                    //         ).checkIfStreaming(),
+                    // });
                 });
             } catch (error) {
                 console.log(error);
