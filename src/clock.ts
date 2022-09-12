@@ -39,27 +39,27 @@ class Clock {
             this.currentTime = moment();
             console.log(this.currentTime.toString());
 
-            this.staticTimeDependentFuns.map((exec: clockExecutable) => {
+            this.staticTimeDependentFuns.map(async (exec: clockExecutable) => {
                 if (this.currentTime.valueOf() >= exec.time.valueOf()) {
                     try {
-                        Promise.resolve(exec.func()).then((res: (execTime: Moment) => Promise<any>) =>
-                            res?.(exec.time)
-                        );
+                        const res: (execTime: Moment) => Promise<any> = await Promise.resolve(exec.func())
+                        res?.(exec.time)
                     } catch (error) {
-                        console.log(error);
+                        console.log("Error in Clock Independent time function: ", error);
                     }
                 }
             });
 
-            this.staticTimeIndependentFuns.map((exec: clockExecutable) => {
+            this.staticTimeIndependentFuns.map(async (exec: clockExecutable) => {
                 try {
-                    Promise.resolve(exec.func()).then((res?: (execTime: Moment) => Promise<any>) => res?.(exec.time));
+                    const res: (execTime: Moment) => Promise<any> = await Promise.resolve(exec.func())
+                    res?.(exec.time)
                 } catch (error) {
-                    console.log(error);
+                    console.log("Error in Clock Independent time function: ", error);
                 }
             });
 
-            this.dynamicFuns = this.dynamicFuns.filter((exec: clockExecutable) => {
+            this.dynamicFuns = this.dynamicFuns.filter(async (exec: clockExecutable) => {
                 if (this.currentTime.valueOf() >= exec.time.valueOf()) {
                     exec.func();
                     return false;

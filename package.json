@@ -1,54 +1,54 @@
 {
-    "name": "miodek_bot",
-    "version": "0.0.0",
-    "description": "simple bot which checks if user is streaming from twitch API",
-    "main": "index.js",
-    "scripts": {
-        "build": "tsc",
-        "test": "echo \"Error: no test specified\" && exit 1",
-        "babel": "babel-node src/index.js",
-        "start": "tsc && node out/index.js",
-        "listen": "nodemon src/index.ts"
-    },
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/DavePlayer/miodek_bot.git"
-    },
-    "keywords": [
-        "miodek",
-        "discord",
-        "bot"
-    ],
-    "author": "Dave_Player",
-    "license": "GNU General Public License v3.0",
-    "bugs": {
-        "url": "https://github.com/DavePlayer/miodek_bot/issues"
-    },
-    "homepage": "https://github.com/DavePlayer/miodek_bot#readme",
-    "dependencies": {
-        "@discordjs/voice": "^0.6.0",
-        "discord.js": "^13.1.0",
-        "dotenv": "^10.0.0",
-        "express": "^4.17.1",
-        "moment": "*",
-        "mongodb": "^4.1.2",
-        "node-fetch": "^2.6.5",
-        "nodemon": "^2.0.7",
-        "opusscript": "^0.0.8",
-        "rimraf": "^3.0.2",
-        "tweetnacl": "^1.0.3",
-        "typescript": "*",
-        "ytdl-core": "^4.5.0"
-    },
-    "devDependencies": {
-        "@babel/cli": "^7.13.0",
-        "@babel/core": "^7.13.8",
-        "@babel/node": "^7.13.0",
-        "@babel/polyfill": "^7.12.1",
-        "@babel/preset-env": "^7.13.9",
-        "@types/express": "^4.17.13",
-        "@types/node": "*",
-        "@types/node-fetch": "^2.5.12",
-        "ts-node": "^10.2.1"
-    }
+  "name": "miodek_bot",
+  "version": "0.0.0",
+  "description": "simple bot which checks if user is streaming from twitch API",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "babel": "babel-node src/index.js",
+    "start": "tsc && node out/index.js",
+    "listen": "nodemon src/index.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DavePlayer/miodek_bot.git"
+  },
+  "keywords": [
+    "miodek",
+    "discord",
+    "bot"
+  ],
+  "author": "Dave_Player",
+  "license": "GNU General Public License v3.0",
+  "bugs": {
+    "url": "https://github.com/DavePlayer/miodek_bot/issues"
+  },
+  "homepage": "https://github.com/DavePlayer/miodek_bot#readme",
+  "dependencies": {
+    "@discordjs/voice": "^0.6.0",
+    "discord.js": "^13.1.0",
+    "dotenv": "^10.0.0",
+    "express": "^4.17.1",
+    "moment": "*",
+    "mongodb": "^4.1.2",
+    "node-fetch": "^2.6.5",
+    "nodemon": "^2.0.7",
+    "opusscript": "^0.0.8",
+    "rimraf": "^3.0.2",
+    "tweetnacl": "^1.0.3",
+    "typescript": "*",
+    "ytdl-core": "^4.5.0"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.13.0",
+    "@babel/core": "^7.13.8",
+    "@babel/node": "^7.13.0",
+    "@babel/polyfill": "^7.12.1",
+    "@babel/preset-env": "^7.13.9",
+    "@types/express": "^4.17.13",
+    "@types/node": "*",
+    "@types/node-fetch": "^2.5.12",
+    "ts-node": "^10.2.1"
+  }
 }
