@@ -2,6 +2,7 @@ import discord, { Client, TextChannel } from "discord.js";
 import node_fetch from "node-fetch";
 const fetch = node_fetch;
 import moment, { Moment } from "moment";
+import { GetTwitchAppOauth } from "./index";
 
 class TwitchManagerC {
     remindedHourly: boolean;
@@ -99,7 +100,8 @@ class TwitchManagerC {
                 };
             }
         } catch (error) {
-            throw (error);
+            process.env.TWITCH_TOKEN = await GetTwitchAppOauth()
+            console.log(error);
         }
     }
 }
