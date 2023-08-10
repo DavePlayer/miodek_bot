@@ -1,5 +1,5 @@
-import fs from "fs";
 import ytdl from "ytdl-core";
+import play from "play-dl";
 import node_fetch from "node-fetch";
 const fetch = node_fetch;
 import discord from "discord.js";
@@ -10,6 +10,8 @@ import discordVoice, {
     VoiceConnectionStatus,
     createAudioResource,
     getVoiceConnection,
+    NoSubscriberBehavior,
+    DiscordGatewayAdapterCreator,
 } from "@discordjs/voice";
 
 class ytMeneger {
@@ -65,7 +67,7 @@ class ytMeneger {
         joinVoiceChannel({
             channelId: this.member.voice.channel.id,
             guildId: this.message.guild.id,
-            adapterCreator: this.message.guild.voiceAdapterCreator,
+            adapterCreator: this.message.guild.voiceAdapterCreator as DiscordGatewayAdapterCreator,
         });
         const Conn = getVoiceConnection(this.member.guild.id);
         Conn.on(VoiceConnectionStatus.Disconnected, () => {
@@ -93,11 +95,27 @@ class ytMeneger {
 
     async menagePlaying() {
         if (this.querry[0]) {
-            this.player = createAudioPlayer();
+            // const source = ytdl(this.querry[0].url, {
+            //     filter: "audioonly",
+            //     highWaterMark: 1 << 25,
+            // }).on("error", (err) => {
+            //     console.error(err);
+            // });
+            let source;
+            try {
+                source = await play.stream(this.querry[0].url);
+            } catch (err) {
+                return console.error(err);
+            }
+            this.player = createAudioPlayer({
+                behaviors: {
+                    noSubscriber: NoSubscriberBehavior.Play,
+                },
+            });
             this.connection.subscribe(this.player);
-            const source = ytdl(this.querry[0].url, { filter: "audioonly", quality: "lowestaudio" });
-            const resource = createAudioResource(source, { inlineVolume: true });
-            resource.volume.setVolume(0.5);
+            const resource = createAudioResource(source.stream, {
+                inputType: source.type,
+            });
             this.player.play(resource);
             this.player.on(AudioPlayerStatus.Idle, () => {
                 if (this.querry.length <= 1) {
@@ -108,13 +126,16 @@ class ytMeneger {
                     this.menagePlaying();
                 }
             });
+            this.player.on(AudioPlayerStatus.Paused, () =>
+                console.error("music for some reason paused")
+            );
             this.player.on("error", (err) => {
                 this.querry = this.querry.filter((o, i) => (i != 0 ? o : null));
                 this.message.channel.send({
                     content: `error accured while playing music. skiping song`,
                 });
                 this.menagePlaying();
-                console.log(err);
+                console.error(err);
             });
             // .on("failed", () => {
             //     this.isPlaying = false;
@@ -160,7 +181,9 @@ class ytMeneger {
         new Promise((res, rej) => {
             const link = (args as Array<string>).join("");
             if (link.includes("youtube.com") && typeof link == "string") {
-                const videoID = link.match(/.*(?:youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=)([^#\&\?]*).*/);
+                const videoID = link.match(
+                    /.*(?:youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=)([^#\&\?]*).*/
+                );
                 fetch(
                     `https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics&id=${videoID[1]}&key=${process.env.YTAPIKEY}`
                 )
@@ -200,7 +223,8 @@ class ytMeneger {
         this.message = message;
         this.member = message.guild.members.cache.get(message.member.user.id);
         if (this.isPlaying == false) {
-            if (!this.member.voice.channelId) return message.reply(`You are not in any channel BAKA!!!`);
+            if (!this.member.voice.channelId)
+                return message.reply(`You are not in any channel BAKA!!!`);
             this.getYtLink(content.split(" "))
                 //yt api has huge json without types
                 .then((o: any) => {

@@ -1,4 +1,4 @@
-import discord, { Awaited, GuildMember, Intents, MessageEmbed, PartialGuildMember, TextChannel } from "discord.js";
+import discord, { GuildMember, Intents, MessageEmbed, PartialGuildMember, TextChannel } from "discord.js";
 import express from "express";
 import "@babel/polyfill";
 import dotenv from "dotenv";
@@ -88,14 +88,15 @@ Client.on("ready", async () => {
     }
 
     // set twitch token
-    process.env.TWITCH_TOKEN = await GetTwitchAppOauth()
 
     Database.establishConnection(process.env.MONGODB_STRING)
         .catch((err) => console.log(err))
         .then(async () => {
             // get twitch users and initialize stream listening
             try {
+                process.env.TWITCH_TOKEN = await GetTwitchAppOauth()
                 const users = await Database.getTwitchUsers();
+                console.log(users)
                 users.map((user) => {
                     TwitchUserListeners.set(
                         user.twitchChannelId + "-in-" + user.discordChannelId,
